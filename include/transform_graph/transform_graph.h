@@ -513,6 +513,7 @@ class TransformGraph {
     for (const auto& [frame, neighbours] : adjacent_frames_) {
       ss << "  " << get_frame_name(frame) << std::endl;
       for (const auto& neighbour : neighbours) {
+        if (!transforms_.count(ComputeParentToChildId(frame, neighbour))) continue;
         ss << "  " << get_frame_name(frame) << " --> " << get_frame_name(neighbour) << std::endl;
       }
     }
