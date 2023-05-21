@@ -1,9 +1,9 @@
-/** 
-* @file transform_graph.h
-* @brief Core of the transform graph
-* @author Amro Al-Baali
-* @date 2023-05-21
-*/
+/**
+ * @file transform_graph.h
+ * @brief Core of the transform graph
+ * @author Amro Al-Baali
+ * @date 2023-05-21
+ */
 
 #ifndef TRANSFORM_GRAPH_TRANSFORM_GRAPH_H_
 #define TRANSFORM_GRAPH_TRANSFORM_GRAPH_H_
@@ -17,10 +17,10 @@
 #include "graph_search.h"
 
 namespace tg {
-// TODO:
-// - Templetize the frame type
-// - Templetize the transform type
-// - Move the ComputeTransformId into the TransformGraph class
+
+/**
+ * @brief Transform graph class
+ */
 template <typename Transform, typename Frame = char>
 class TransformGraph {
  public:
@@ -29,50 +29,27 @@ class TransformGraph {
   using Transforms = std::unordered_map<TransformId, Transform>;
   using AdjacentFrames = std::unordered_map<Frame, std::unordered_set<Frame>>;
 
+  /**
+   * @brief Construct a new Transform Graph object
+   *
+   * @details The maximum number of frames cannot be changed after construction
+   *
+   * @param[in] max_frames Maximum number of frames allowed in the graph
+   */
   TransformGraph(int max_frames = 100) : max_frames_(max_frames) {}
 
   /**
    * @brief Get maximum number allowed in the transform graph
    *
-   * @return
+   * @return Maximum number of frames allowed in the graph
    */
   int max_frames() const { return max_frames_; }
 
-  // TEMPORARY: Adding a private section here to avoid declaring the functions used in the public
+  // Adding a private section here to avoid declaring the functions used in the public
   // functions
- private:
-  /**
-   * @brief Compute a unique ID for a transform between two frames
-   *
-   * @param[in] parent Parent frame
-   * @param[in] child Child frame
-   *
-   * @return Unique ID for the transform
-   */
-  TransformId ComputeParentToChildId(Frame parent, Frame child) const {
-    return static_cast<TransformId>(parent) * max_frames_ + static_cast<TransformId>(child);
-  }
-
-  bool ShouldInvertFrames(Frame parent, Frame child) const { return parent > child; }
-
-  /**
-   * @brief Compute a unique ID for a transform between two frames. The ID is independent of the
-   * order
-   *
-   * @param[in] parent
-   * @param[in] child
-   *
-   * @return Unique ID for the transform
-   */
-  TransformId ComputeTransformId(Frame parent, Frame child) const {
-    if (ShouldInvertFrames(parent, child)) {
-      return ComputeParentToChildId(child, parent);
-    } else {
-      return ComputeParentToChildId(parent, child);
-    }
-  }
-
+  // private:
  public:
+  /** Type of function that searches for a path between two frames in the graph */
   using GraphSearchCallback =
       std::function<std::vector<Frame>(const AdjacentFrames&, Frame, Frame)>;
 
@@ -188,36 +165,14 @@ class TransformGraph {
   }
 
   /**
-   * @brief Get a mermiad graph of the graph
+   * @brief Get a mermaid graph of the frames and transforms that can be viewed on Markdown files or
+   * online (e.g., https://mermaid-js.github.io/mermaid-live-editor)
    *
-   * @return String of the mermaid graph. It can be viewed on
-   * https://mermaid-js.github.io/mermaid-live-editor or on markdown files by wrapping it in
-   * ```mermaid and ```
+   * @param[in] get_frame_name Function that returns a string (i.e., frame name) for a given frame
+   *
+   * @return String of a mermaid graph. To insert in a Markdown file, then wrap with '```mermaid'
+   * and '```'
    */
-  // std::string GetMermaidGraph() const {
-  //   std::stringstream ss;
-  //   ss << "graph TD" << std::endl;
-  //   for (const auto& [frame, neighbours] : adjacent_frames_) {
-  //     ss << "  " << frame << std::endl;
-  //     for (const auto& neighbour : neighbours) {
-  //       ss << "  " << frame << " --> " << neighbour << std::endl;
-  //     }
-  //   }
-  //   return ss.str();
-  // }
-
-  // std::string GetMermaidGraph(const std::unordered_map<Frame, std::string>& frame_names) const {
-  //   std::stringstream ss;
-  //   ss << "graph TD" << std::endl;
-  //   for (const auto& [frame, neighbours] : adjacent_frames_) {
-  //     ss << "  " << frame_names.at(frame) << std::endl;
-  //     for (const auto& neighbour : neighbours) {
-  //       ss << "  " << frame_names.at(frame) << " --> " << frame_names.at(neighbour) << std::endl;
-  //     }
-  //   }
-  //   return ss.str();
-  // }
-
   std::string GetMermaidGraph(const std::function<std::string(Frame)>& get_frame_name) const {
     std::stringstream ss;
     ss << "graph TD" << std::endl;
@@ -230,6 +185,13 @@ class TransformGraph {
     return ss.str();
   }
 
+  /**
+   * @brief Get a mermaid graph of the frames and transforms using the default frame names (or
+   * numbers)
+   *
+   * @return String of a mermaid graph. To insert in a Markdown file, then wrap with '```mermaid'
+   * and '```'
+   */
   std::string GetMermaidGraph() const {
     const auto get_frame_name = [](Frame frame) {
       std::stringstream ss;
@@ -289,6 +251,51 @@ class TransformGraph {
   }
 
  private:
+  /**
+   * @brief Compute a unique ID for a transform between two frames
+   *
+   * @param[in] parent Parent frame
+   * @param[in] child Child frame
+   *
+   * @return Unique ID for the transform
+   */
+  TransformId ComputeParentToChildId(Frame parent, Frame child) const {
+    return static_cast<TransformId>(parent) * max_frames_ + static_cast<TransformId>(child);
+  }
+
+  /**
+   * @brief Check if the transform should be inverted (internally) when stored in the transform
+   * graph
+   *
+   * @details This is used to avoid storing the same transform twice. The transform is stored as
+   * `T_a_b`, where `a` < `b`.
+   *
+   * @param[in] parent Parent frame
+   * @param[in] child Child frame
+   *
+   * @return True if the transform should be inverted (i.e., stored internally as `T_child_parent`)
+   */
+  bool ShouldInvertFrames(Frame parent, Frame child) const { return parent > child; }
+
+  /**
+   * @brief Compute a unique ID for a transform between two frames. The ID is independent of the
+   * order of the frames
+   *
+   * @details The transform ID is stored as "aabb", where "aa" < "bb" (i.e., the frames are sorted)
+   *
+   * @param[in] parent Parent frame
+   * @param[in] child Child frame
+   *
+   * @return Unique ID for the transform, which is in the form "aabb", where "aa" < "bb"
+   */
+  TransformId ComputeTransformId(Frame parent, Frame child) const {
+    if (ShouldInvertFrames(parent, child)) {
+      return ComputeParentToChildId(child, parent);
+    } else {
+      return ComputeParentToChildId(parent, child);
+    }
+  }
+
   /** Maximum number of frames expected to be in the graph */
   int max_frames_ = 100;
 
@@ -301,7 +308,6 @@ class TransformGraph {
   Transforms transforms_;
 
   /** Function to call to search for a path between two frames in the graph */
-  // GraphSearchCallback graph_search_callback_ = DFS;
   GraphSearchCallback graph_search_callback_ = DFS<Frame>;
 };
 
