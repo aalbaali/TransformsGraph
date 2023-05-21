@@ -112,7 +112,9 @@ class TransformGraph {
     if (path.size() == 0) {
       throw std::runtime_error("No transform exists between the two frames");
     }
-    Transform T_parent_child = Transform::Identity();
+
+    // Transform starts as identity
+    Transform T_parent_child;
 
     Frame prev = parent;
     for (const auto& frame : path) {
@@ -120,7 +122,7 @@ class TransformGraph {
       const auto transform_id = ComputeTransformId(prev, frame);
       auto T_prev_curr = transforms_.at(transform_id);
       if (ShouldInvertFrames(prev, frame)) {
-        T_prev_curr = T_prev_curr.Inverse();
+        T_prev_curr = T_prev_curr.inverse();
       }
 
       T_parent_child = T_parent_child * T_prev_curr;
@@ -139,7 +141,7 @@ class TransformGraph {
    *
    * @return
    */
-  std::string GetTransformChain(Frame parent, Frame child) const {
+  std::string GetTransformChain(Frame parent, Frame child, bool show_transforms = false) const {
     const auto paths = GetPath(parent, child);
     if (paths.size() == 0) {
       throw std::runtime_error("No transform exists between the two frames");
@@ -152,16 +154,22 @@ class TransformGraph {
       if (frame == prev) continue;
       if (ShouldInvertFrames(prev, frame)) {
         ss_frames << "T_" << frame << "_" << prev << "^-1";
-        ss_transforms << transforms_.at(ComputeTransformId(prev, frame)).Inverse().x() << " -> ";
+        if (show_transforms) {
+          ss_transforms << transforms_.at(ComputeTransformId(prev, frame)).inverse() << " -> ";
+        }
       } else {
         ss_frames << "T_" << prev << "_" << frame;
-        ss_transforms << transforms_.at(ComputeTransformId(prev, frame)).x() << " -> ";
+        if (show_transforms) {
+          ss_transforms << transforms_.at(ComputeTransformId(prev, frame)) << " -> ";
+        }
       }
       ss_frames << " -> ";
-
       prev = frame;
     }
-    return ss_frames.str() + "\n" + ss_transforms.str();
+    if (show_transforms) {
+      return ss_frames.str() + "\n" + ss_transforms.str();
+    }
+    return ss_frames.str();
   }
 
   /**
@@ -219,7 +227,7 @@ class TransformGraph {
       }
 
       const auto transform_id = ComputeTransformId(parent, child);
-      transforms_[transform_id] = ShouldInvertFrames(parent, child) ? pose.Inverse() : pose;
+      transforms_[transform_id] = ShouldInvertFrames(parent, child) ? pose.inverse() : pose;
       return;
     }
 
@@ -231,7 +239,7 @@ class TransformGraph {
     adjacent_frames_[child].insert(parent);
 
     const auto transform_id = ComputeTransformId(parent, child);
-    transforms_[transform_id] = ShouldInvertFrames(parent, child) ? pose.Inverse() : pose;
+    transforms_[transform_id] = ShouldInvertFrames(parent, child) ? pose.inverse() : pose;
   }
 
   /**
