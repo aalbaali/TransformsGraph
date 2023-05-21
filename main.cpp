@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <iostream>
+#include <queue>
 #include <sstream>
 #include <unordered_map>
 #include <unordered_set>
@@ -8,6 +9,8 @@
 // Fake pose class
 class Pose {
  public:
+  static Pose Identity() { return Pose(0); }
+
   Pose() = default;
   Pose(double x) : x_(x) {}
   double x() const { return x_; }
@@ -18,6 +21,9 @@ class Pose {
  private:
   double x_;
 };
+
+Pose operator*(const Pose& p1, const Pose& p2) { return Pose(p1.x() + p2.x()); }
+Pose& operator*=(Pose& p1, const Pose& p2) { return p1 = p1 * p2; }
 
 constexpr int MAX_FRAMES = 100;
 
@@ -79,6 +85,47 @@ std::vector<Frame> DFS(const AdjacentFrames& graph, Frame start, Frame end) {
   return path;
 }
 
+std::vector<Frame> BFS(const AdjacentFrames& graph, Frame start, Frame end) {
+  std::vector<Frame> path;
+  std::unordered_set<Frame> visited;
+  std::unordered_map<Frame, Frame> parent;
+  std::queue<Frame> queue;
+
+  bool found_solution = false;
+  queue.push(start);
+  visited.insert(start);
+
+  while (!queue.empty()) {
+    Frame current = queue.front();
+    queue.pop();
+
+    // Found the end
+    if (current == end) {
+      found_solution = true;
+      break;
+    }
+
+    for (const auto& neighbour : graph.at(current)) {
+      if (visited.count(neighbour)) continue;
+      visited.insert(neighbour);
+      queue.push(neighbour);
+      parent[neighbour] = current;
+    }
+  }
+
+  if (!found_solution) return {};
+
+  // Reconstruct the path
+  Frame node = end;
+  while (node != start) {
+    path.push_back(node);
+    node = parent[node];
+  }
+  path.push_back(start);
+  std::reverse(path.begin(), path.end());
+  return path;
+}
+
 /**
  * @brief Compute a unique ID for a transform between two frames
  *
@@ -111,6 +158,9 @@ TransformId ComputeTransformId(Frame parent, Frame child) {
 
 class TransformForest {
  public:
+  using GraphSearchCallback =
+      std::function<std::vector<Frame>(const AdjacentFrames&, Frame, Frame)>;
+
   /**
    * @brief Check if a frame is in the forest
    *
@@ -140,7 +190,7 @@ class TransformForest {
     if (!IsFrameInForest(parent)) return {};
     if (!IsFrameInForest(child)) return {};
 
-    return DFS(adjacent_frames_, parent, child);
+    return graph_search_callback_(adjacent_frames_, parent, child);
   }
 
   /**
@@ -154,7 +204,7 @@ class TransformForest {
   bool DoesTransformExist(Frame parent, Frame child) const {
     if (!IsFrameInForest(parent)) return false;
     if (!IsFrameInForest(child)) return false;
-    return DFS(adjacent_frames_, parent, child).size() > 0;
+    return graph_search_callback_(adjacent_frames_, parent, child).size() > 0;
   }
 
   /**
@@ -165,7 +215,38 @@ class TransformForest {
    *
    * @return
    */
-  // Transform GetTransform(Frame parent, Frame child) const {}
+  Transform GetTransform(Frame parent, Frame child) const {
+    const auto path = GetPath(parent, child);
+    if (path.size() == 0) {
+      throw std::runtime_error("No transform exists between the two frames");
+    }
+    Pose T_parent_child = Pose::Identity();
+
+    Frame prev = parent;
+    for (const auto& frame : path) {
+      if (frame == prev) continue;
+      const auto transform_id = ComputeTransformId(prev, frame);
+      auto T_prev_curr = transforms_.at(transform_id);
+      if (ShouldInvertFrames(prev, frame)) {
+        T_prev_curr = T_prev_curr.Inverse();
+      }
+
+      T_parent_child = T_parent_child * T_prev_curr;
+
+      prev = frame;
+    }
+
+    return T_parent_child;
+  }
+
+  /**
+   * @brief Get a string showing the transform chain between two frames
+   *
+   * @param[in] parent Parent frame
+   * @param[in] child Child frame
+   *
+   * @return
+   */
   std::string GetTransformChain(Frame parent, Frame child) const {
     const auto paths = GetPath(parent, child);
     if (paths.size() == 0) {
@@ -194,6 +275,25 @@ class TransformForest {
       prev = frame;
     }
     return ss.str() + "\n" + ss2.str();
+  }
+
+  /**
+   * @brief Get a mermiad graph of the forest
+   *
+   * @return String of the mermaid graph. It can be viewed on
+   * https://mermaid-js.github.io/mermaid-live-editor or on markdown files by wrapping it in
+   * ```mermaid and ```
+   */
+  std::string GetMermaidGraph() const {
+    std::stringstream ss;
+    ss << "graph TD" << std::endl;
+    for (const auto& [frame, neighbours] : adjacent_frames_) {
+      ss << "  " << frame << std::endl;
+      for (const auto& neighbour : neighbours) {
+        ss << "  " << frame << " --> " << neighbour << std::endl;
+      }
+    }
+    return ss.str();
   }
 
   /**
@@ -241,6 +341,10 @@ class TransformForest {
 
   const AdjacentFrames& GetForest() const noexcept { return adjacent_frames_; }
 
+  void SetGraphSearchCallback(GraphSearchCallback callback) noexcept {
+    graph_search_callback_ = callback;
+  }
+
  private:
   /** Acyclic graph where the vertices are the frames and the edges are transforms between the two
    * frames */
@@ -249,31 +353,39 @@ class TransformForest {
   /** Map of unique raw transforms between frames. The transform is stored as `T_a_b`, where `a <
    * b`. That is, if `T_a_b` exists, then `T_b_a` should not exist in the map. */
   Transforms transforms_;
+
+  /** Function to call to search for a path between two frames in the forest */
+  GraphSearchCallback graph_search_callback_ = DFS;
 };
 
 int main(int argc, char* argv[]) {
-  //// Example of constructing a graph
-  // AdjacentFrames graph;
-  // graph.emplace(0, std::unordered_set<Frame>{1, 2});
-  // graph.emplace(1, std::unordered_set<Frame>{0});
-  // graph.emplace(2, std::unordered_set<Frame>{0});
+  // Example of constructing a graph
 
-  //// Second frame
-  // graph.at(1).insert(3);
-  // graph.emplace(3, std::unordered_set<Frame>{1});
+  // Mermaid graph (visible on Markdown files or on
+  // https://mermaid-js.github.io/mermaid-live-editor/)
+  //```mermaid
+  // graph LR;
+  //  a --> b
+  //  a --> c
+  //  b --> d
+  //```
   TransformForest transforms;
-  // transforms.AddTransform(0, 1, 1);
-  // transforms.AddTransform(0, 2, 2);
-  // transforms.AddTransform(1, 3, 3);
   transforms.AddTransform('a', 'b', 1);
   transforms.AddTransform('a', 'c', 2);
   transforms.AddTransform('b', 'd', 3);
+  transforms.AddTransform('e', 'f', 4);
 
-  Frame start = 'c';
-  Frame end = 'd';
+  // Add transform between already-existing frames
+  transforms.AddTransform('a', 'e', 5);
+
+  transforms.SetGraphSearchCallback(BFS);
+
+  Frame start = 'd';
+  Frame end = 'f';
 
   //// Example of using DFS
-  // std::vector<Frame> path = DFS(transforms.GetForest(), start, end);
+  ////std::vector<Frame> path = DFS(transforms.GetForest(), start, end);
+  // std::vector<Frame> path = BFS(transforms.GetForest(), start, end);
 
   //// Print the path
   // std::cout << "Path: ";
@@ -281,5 +393,13 @@ int main(int argc, char* argv[]) {
   //   std::cout << frame << " ";
   // }
 
+  if (!transforms.DoesTransformExist(start, end)) {
+    std::cout << "Transform doesn't exist" << std::endl;
+    return -1;
+  }
+
   std::cout << transforms.GetTransformChain(start, end) << std::endl;
+  std::cout << transforms.GetTransform(start, end).x() << std::endl;
+
+  std::cout << transforms.GetMermaidGraph() << std::endl;
 }
