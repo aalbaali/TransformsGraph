@@ -57,16 +57,16 @@ int main(int argc, char* argv[]) {
   std::cout << transforms.GetMermaidGraph() << std::endl;
 
   // There are some ways to check if a transform exists between two frames
-  std::cout << "Does a->b exist? " << transforms.DoesTransformExist('a', 'b') << std::endl;
-  std::cout << "Does a->d exist? " << transforms.DoesTransformExist('a', 'd') << std::endl;
-  std::cout << "Does a->f exist? " << transforms.DoesTransformExist('a', 'f') << std::endl;
+  std::cout << "Does a->b exist? " << transforms.HasTransform('a', 'b') << std::endl;
+  std::cout << "Does a->d exist? " << transforms.HasTransform('a', 'd') << std::endl;
+  std::cout << "Does a->f exist? " << transforms.HasTransform('a', 'f') << std::endl;
 
   // Now let's connect the two subgraphs
   transforms.AddTransform('c', 'f', 5);
 
   // Visualize the graph with edges
   std::cout << transforms.GetMermaidGraph(true) << std::endl;
-  std::cout << "Does a->f exist? " << transforms.DoesTransformExist('a', 'f') << std::endl;
+  std::cout << "Does a->f exist? " << transforms.HasTransform('a', 'f') << std::endl;
 
   // One can visualize the path between two frames. This should match what you see on the graph
   std::cout << "Path from a->e: " << transforms.GetTransformChainString('a', 'e', true)
@@ -80,7 +80,7 @@ int main(int argc, char* argv[]) {
   // This is because the graph is acyclic and adding a transform to an existing path would
   // create a cycle
   try {
-    transforms.AddTransform('a', 'f', 6);
+    transforms.AddTransform('a', 'f', 7);
   } catch (const std::runtime_error& e) {
     std::cout << "Caught exception: " << e.what() << std::endl;
   }

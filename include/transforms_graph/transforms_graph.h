@@ -5,10 +5,7 @@
  * @date 2023-05-21
  */
 
-// TODO: there needs to be a distinction between raw transforms and transforms that can be chained
-// That is, if the graph is `a->b->c`, then `a->b` is a "raw transform", whereas `a->c` is a
-// "chained transform" but not a "raw transform"
-// This will make it easier to modify the graph
+// TODO: Add support to delete frames or transforms
 
 #ifndef TRANSFORMS_GRAPH_TRANSFORMS_GRAPH_H_
 #define TRANSFORMS_GRAPH_TRANSFORMS_GRAPH_H_
@@ -23,18 +20,26 @@
 
 namespace tg {
 
-// TODO: Should rename the class to 'TransformsGraph' (add 's' to 'Transform' to avoid confusion
-// with an action ("Transform the graph"))
 /**
  * @brief Transform graph class
+ * @tparam Transform Transform/pose type
+ * @tparam Frame Frame type (e.g. char, int, etc.)
  */
 template <typename Transform, typename Frame = char>
 class TransformsGraph {
  public:
+  /** Id/key used to store transforms in the Transforms map */
   using TransformId = int;
-  // Graph of frames and transforms
+
+  /** Raw transforms */
   using Transforms = std::unordered_map<TransformId, Transform>;
+
+  /** Adjacency matrix of adjacent frames */
   using AdjacentFrames = std::unordered_map<Frame, std::unordered_set<Frame>>;
+
+  /** Callable that searches for a path between two frames in the graph */
+  using GraphSearchCallback =
+      std::function<std::vector<Frame>(const AdjacentFrames&, Frame, Frame)>;
 
   /**
    * @brief Construct a new Transform Graph object
@@ -50,15 +55,7 @@ class TransformsGraph {
    *
    * @return Maximum number of frames allowed in the graph
    */
-  int max_frames() const { return max_frames_; }
-
-  // Adding a private section here to avoid declaring the functions used in the public
-  // functions
-  // private:
- public:
-  /** Type of function that searches for a path between two frames in the graph */
-  using GraphSearchCallback =
-      std::function<std::vector<Frame>(const AdjacentFrames&, Frame, Frame)>;
+  int MaxFrames() const { return max_frames_; }
 
   /**
    * @brief Check if a frame is in the graph
@@ -67,15 +64,7 @@ class TransformsGraph {
    *
    * @return True if it's in the graph
    */
-  bool IsFrameInGraph(Frame frame) const {
-    if (adjacent_frames_.count(frame) > 0) return true;
-
-    // Otherwise, will need to check each frame neighbours
-    for (const auto& [_, neighbours] : adjacent_frames_) {
-      if (neighbours.count(frame) > 0) return true;
-    }
-    return false;
-  }
+  bool IsFrameInGraph(Frame frame) const { return adjacent_frames_.count(frame) > 0; }
 
   /**
    * @brief Get the path between two frames. Returns empty vector if no path exists
@@ -100,24 +89,63 @@ class TransformsGraph {
    *
    * @return
    */
-  // TODO: Rename to 'HasTransform'?
-  bool DoesTransformExist(Frame parent, Frame child) const {
+  bool HasTransform(Frame parent, Frame child) const {
     if (!IsFrameInGraph(parent)) return false;
     if (!IsFrameInGraph(child)) return false;
     return graph_search_callback_(adjacent_frames_, parent, child).size() > 0;
   }
 
-  // TODO:
-  // GetRawTransform(Frame parent, Frame child) const;
-  // DoesRawTransformExist(Frame parent, Frame child) const;
+  /**
+   * @brief Checks if a raw transform exists in the graph, irrespective of order.
+   *
+   * @details A raw transform is a transform that is directly stored in the graph. For example,
+   * given a graph `a->b->c`, then `a->b` is a raw transform, whereas `a->c` is a chained transform,
+   * but not a raw transform. Note that `b->a` is also a raw transform that is valid in this case.
+   *
+   * @param[in] parent
+   * @param[in] child
+   *
+   * @return True if the raw transform exists
+   */
+  bool HasRawTransform(Frame parent, Frame child) const {
+    const auto transform_id = ComputeTransformId(parent, child);
+    return raw_transforms_.count(transform_id) > 0;
+  }
 
   /**
-   * @brief Get the transform between two frames. Throws an exception if no transform exists
+   * @brief Get the raw transform between two frames (irrespective of order). Throws an exception if
+   * no transform exists.
+   *
+   * @details A raw transform is a transform that is directly stored in the graph. For example,
+   * given a graph `a->b->c`, then `a->b` is a raw transform, whereas `a->c` is a chained transform,
+   * but not a raw transform. Note that `b->a` is also a raw transform that is valid in this case.
+   *
+   * @param[in] parent
+   * @param[in] child
+   *
+   * @return
+   */
+  Transform GetRawTransform(Frame parent, Frame child) const {
+    if (!HasRawTransform(parent, child)) {
+      throw std::runtime_error("No raw transform exists between the two frames");
+    }
+    const auto transform_id = ComputeTransformId(parent, child);
+    auto transform = raw_transforms_.at(transform_id);
+
+    return ShouldInvertFrames(parent, child) ? transform.inverse() : transform;
+  }
+
+  /**
+   * @brief Get the chained transform between two frames. Throws an exception if no transform exists
+   *
+   * @details A chained transform is a transform between two frames that are not necessarily
+   * neighbours in the graph. For example, given a graph `a->b->c`, then `a->c` is a chained
+   * transform but not a raw transform.
    *
    * @param[in] parent Parent frame
    * @param[in] child Child frame
    *
-   * @return
+   * @return Chained transform between the two frames
    */
   Transform GetTransform(Frame parent, Frame child) const {
     const auto path = GetTransformChain(parent, child);
@@ -132,7 +160,7 @@ class TransformsGraph {
     for (const auto& frame : path) {
       if (frame == prev) continue;
       const auto transform_id = ComputeTransformId(prev, frame);
-      auto T_prev_curr = transforms_.at(transform_id);
+      auto T_prev_curr = raw_transforms_.at(transform_id);
       if (ShouldInvertFrames(prev, frame)) {
         T_prev_curr = T_prev_curr.inverse();
       }
@@ -167,18 +195,18 @@ class TransformsGraph {
       if (frame == prev) continue;
       if (ShouldInvertFrames(prev, frame)) {
         ss_frames << "T_" << frame << "_" << prev << "^-1";
-        if (show_transforms) {
-          ss_transforms << transforms_.at(ComputeTransformId(prev, frame)).inverse() << " -> ";
-        }
       } else {
         ss_frames << "T_" << prev << "_" << frame;
-        if (show_transforms) {
-          ss_transforms << transforms_.at(ComputeTransformId(prev, frame)) << " -> ";
-        }
+      }
+
+      if (show_transforms) {
+        // The inversion, if necessary, is taken care of
+        ss_transforms << GetRawTransform(prev, frame) << " -> ";
       }
       ss_frames << " -> ";
       prev = frame;
     }
+
     if (show_transforms) {
       return "Chain: " + ss_frames.str() + "\nTransforms: " + ss_transforms.str();
     }
@@ -202,11 +230,18 @@ class TransformsGraph {
     for (const auto& [frame, neighbours] : adjacent_frames_) {
       ss << "  " << get_frame_name(frame) << std::endl;
       for (const auto& neighbour : neighbours) {
+        // To keep the direction of the transforms (as they are stored in the graph), ignore the
+        // inverse transforms (e.g., if `T_a_b` is stored in the graph, then transforms_['ab']
+        // exists, whereas transforms_['ba'] doesn't exist in the graph)
         const auto transform_id = ComputeParentToChildId(frame, neighbour);
-        if (!transforms_.count(transform_id)) continue;
+        if (!raw_transforms_.count(transform_id)) continue;
+
+        // Add frame name and direction
         ss << "  " << get_frame_name(frame) << " --> ";
+
+        // Add edges to the mermaid graph, if necessary
         if (show_edges) {
-          ss << "| " << transforms_.at(transform_id) << " | ";
+          ss << "| " << raw_transforms_.at(transform_id) << " | ";
         }
         ss << get_frame_name(neighbour) << std::endl;
       }
@@ -224,6 +259,7 @@ class TransformsGraph {
    * and '```'
    */
   std::string GetMermaidGraph(bool show_edges = false) const {
+    // The default frame name is whatever is returned by the Frame class
     const auto get_frame_name = [](Frame frame) {
       std::stringstream ss;
       ss << frame;
@@ -241,22 +277,22 @@ class TransformsGraph {
    * @param[in] pose Transform from parent to child. That is, for a displacement `r_child` resolved
    * in the `child` frame, it can be resolved in the parent frame using `r_parent = pose * r_child`
    */
-  void AddTransform(Frame parent, Frame child, const Transform& pose) {
-    // Handle the case where the transform already exists in the graph
-    if (DoesTransformExist(parent, child)) {
-      // TODO: How to handle 'overriding' a transform that already exists in the graph?
-      // Note that this is not a simple case of replacing the transform, since the transform
-      // might be used in other transforms. For example, if we have the following transforms:
-      //  'a'->'b'->'c'->'d', and we add the transform 'a'->'d', then what does "overriding" the
-      //  transform really mean?
-      //  To do this correctly, we need to remove one of the paths between 'a' and 'd' to break
-      // the cycle, and then we can add 'a'->'d'. However, this is not trivial to do, so we
-      // simply throw an exception for now.
-      //
-      // This could be done by overriding the transform if it explicitly exists in the frames (i.e.,
-      // if there's a transform `T_parent_child` or `T_child_parent`)
-
-      throw std::runtime_error("Transform already exists between the two frames");
+  void AddTransform(Frame parent, Frame child, const Transform& pose,
+                    bool should_override = false) {
+    // Handle the case where the transform exists. The only situation in which the transform is
+    // overridden is if the override flag is set tot true AND the transform to be updated is a raw
+    // transform
+    if (HasTransform(parent, child) && (!should_override || !HasRawTransform(child, parent))) {
+      // Note that handling overriding generic transforms is not a simple case of replacing the
+      // transform, since the transform might be used in other transforms. For example, if we have
+      // the following transforms: 'a'->'b'->'c'->'d', and we add the transform 'a'->'d', then what
+      // does "overriding" the transform really mean?
+      // To do this correctly, we need to remove one of the paths between 'a' and 'd' to break
+      // the cycle, and then we can add 'a'->'d'. However, this is not trivial to do when the
+      // transform to be updated is not the raw transform (since there are many possible transforms
+      // that can be updated/deleted)
+      throw std::runtime_error(
+          "Transform already exists between the two frames and overriding is not applicable");
     }
 
     // Add frame to the graph if it doesn't already exist
@@ -266,14 +302,8 @@ class TransformsGraph {
     adjacent_frames_[parent].insert(child);
     adjacent_frames_[child].insert(parent);
 
-    InsertTransform(parent, child, pose);
-  }
-
-  void UpdateTransform(Frame parent, Frame child, const Transform& pose) {
-    if (!DoesTransformExist(parent, child)) {
-      throw std::runtime_error("Transform does not exist between the two frames");
-    }
-    InsertTransform(parent, child, pose);
+    // Insert/update raw transform into the graph
+    UpdateRawTransform(parent, child, pose);
   }
 
   /**
@@ -286,20 +316,43 @@ class TransformsGraph {
     adjacent_frames_.emplace(frame, std::unordered_set<Frame>());
   }
 
+  /**
+   * @brief Get the graph of frames and their neighbours
+   *
+   * @return AdjacentFrames Graph of frames and their neighbours
+   */
   const AdjacentFrames& GetGraph() const noexcept { return adjacent_frames_; }
 
+  /**
+   * @brief Set the function that is called when searching the graph for a path between two frames
+   *
+   * @param[in] callback
+   */
   void SetGraphSearchCallback(GraphSearchCallback callback) noexcept {
     graph_search_callback_ = callback;
   }
 
- private:
-  void InsertTransform(Frame parent, Frame child, const Transform& pose) {
+  /**
+   * @brief Update or insert a raw transform into the graph. This function assumes that the frames
+   * already exist in the dictionary.
+   *
+   * @details Note that the function takes care of the order. That is, `T_a_b` and `T_b_a` are
+   * treated as one.
+   *
+   * @param[in] parent Parent frame
+   * @param[in] child Child frame
+   * @param[in] pose Transform from parent to child. That is, for a displacement `r_child` resolved
+   */
+  void UpdateRawTransform(Frame parent, Frame child, const Transform& pose) {
     const auto transform_id = ComputeTransformId(parent, child);
-    transforms_[transform_id] = ShouldInvertFrames(parent, child) ? pose.inverse() : pose;
+    raw_transforms_[transform_id] = ShouldInvertFrames(parent, child) ? pose.inverse() : pose;
   }
 
+ private:
   /**
-   * @brief Compute a unique ID for a transform between two frames
+   * @brief Compute a unique ID for a transform between two frames. The order matters (i.e., the ID
+   * for `T_a_b` will be different than `T_b_a`). Check `ComputeTransformId` for an order-agnostic
+   * ID.
    *
    * @param[in] parent Parent frame
    * @param[in] child Child frame
@@ -328,7 +381,8 @@ class TransformsGraph {
    * @brief Compute a unique ID for a transform between two frames. The ID is independent of the
    * order of the frames
    *
-   * @details The transform ID is stored as "aabb", where "aa" < "bb" (i.e., the frames are sorted)
+   * @details The transform ID is computed as "aabb", where "aa" < "bb" (i.e., the frames are
+   * sorted)
    *
    * @param[in] parent Parent frame
    * @param[in] child Child frame
@@ -336,11 +390,8 @@ class TransformsGraph {
    * @return Unique ID for the transform, which is in the form "aabb", where "aa" < "bb"
    */
   TransformId ComputeTransformId(Frame parent, Frame child) const {
-    if (ShouldInvertFrames(parent, child)) {
-      return ComputeParentToChildId(child, parent);
-    } else {
-      return ComputeParentToChildId(parent, child);
-    }
+    return ShouldInvertFrames(parent, child) ? ComputeParentToChildId(child, parent)
+                                             : ComputeParentToChildId(parent, child);
   }
 
   /** Maximum number of frames expected to be in the graph */
@@ -350,13 +401,14 @@ class TransformsGraph {
    * frames */
   AdjacentFrames adjacent_frames_;
 
-  /** Map of unique raw transforms between frames. The transform is stored as `T_a_b`, where `a <
-   * b`. That is, if `T_a_b` exists, then `T_b_a` should not exist in the map. */
-  Transforms transforms_;
+  /** Map of raw transforms between frames. The transform is stored as `T_a_b`, where `a < b`. That
+   * is, if `T_a_b` exists, then `T_b_a` should not exist in the map.
+   */
+  Transforms raw_transforms_;
 
-  /** Function to call to search for a path between two frames in the graph */
+  /** Function to call when searching for a path between two frames in the graph */
   GraphSearchCallback graph_search_callback_ = DFS<Frame>;
 };
 
 }  // namespace tg
-#endif // TRANSFORMS_GRAPH_TRANSFORMS_GRAPH_H_
+#endif  // TRANSFORMS_GRAPH_TRANSFORMS_GRAPH_H_
