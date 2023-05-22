@@ -62,7 +62,7 @@ class TransformsGraph {
    *
    * @return True if it's in the graph
    */
-  bool IsFrameInGraph(Frame frame) const { return adjacent_frames_.count(frame) > 0; }
+  bool HasFrame(Frame frame) const { return adjacent_frames_.count(frame) > 0; }
 
   /**
    * @brief Get the path between two frames. Returns empty vector if no path exists
@@ -73,8 +73,8 @@ class TransformsGraph {
    * @return Vector of paths from the parent to the child
    */
   std::vector<Frame> GetTransformChain(Frame parent, Frame child) const {
-    if (!IsFrameInGraph(parent)) return {};
-    if (!IsFrameInGraph(child)) return {};
+    if (!HasFrame(parent)) return {};
+    if (!HasFrame(child)) return {};
 
     return graph_search_callback_(adjacent_frames_, parent, child);
   }
@@ -88,8 +88,8 @@ class TransformsGraph {
    * @return
    */
   bool HasTransform(Frame parent, Frame child) const {
-    if (!IsFrameInGraph(parent)) return false;
-    if (!IsFrameInGraph(child)) return false;
+    if (!HasFrame(parent)) return false;
+    if (!HasFrame(child)) return false;
     return graph_search_callback_(adjacent_frames_, parent, child).size() > 0;
   }
 
@@ -109,15 +109,6 @@ class TransformsGraph {
     const auto transform_id = ComputeTransformId(parent, child);
     return raw_transforms_.count(transform_id) > 0;
   }
-
-  /**
-   * @brief Check if a frame exists in the grap
-   *
-   * @param[in] frame The frame to check for
-   *
-   * @return True if the frame exists in the graph
-   */
-  bool HasFrame(Frame frame) const { return adjacent_frames_.count(frame) > 0; }
 
   /**
    * @brief Get the raw transform between two frames (irrespective of order). Throws an exception if
@@ -305,8 +296,8 @@ class TransformsGraph {
     }
 
     // Add frame to the graph if it doesn't already exist
-    if (!IsFrameInGraph(parent)) AddFrame(parent);
-    if (!IsFrameInGraph(child)) AddFrame(child);
+    if (!HasFrame(parent)) AddFrame(parent);
+    if (!HasFrame(child)) AddFrame(child);
 
     adjacent_frames_[parent].insert(child);
     adjacent_frames_[child].insert(parent);
@@ -321,7 +312,7 @@ class TransformsGraph {
    * @param[in] frame Frame to add to the graph
    */
   void AddFrame(Frame frame) noexcept {
-    if (IsFrameInGraph(frame)) return;
+    if (HasFrame(frame)) return;
     adjacent_frames_.emplace(frame, std::unordered_set<Frame>());
   }
 
@@ -380,8 +371,35 @@ class TransformsGraph {
    * @return Vector of unordered frames in the graph
    */
   std::vector<Frame> GetAllFrames() const {
-    return std::vector<Frame>(adjacent_frames_.begin(), adjacent_frames_.end());
+    std::vector<Frame> frames;
+    frames.reserve(adjacent_frames_.size());
+    for (const auto& kv : adjacent_frames_) {
+      frames.push_back(kv.first);
+    }
+    return frames;
   }
+
+  /**
+   * @brief Get frames adjacent to a given frame. Throws an exception if the frame does not exist
+   *
+   * @param[in] frame Frame to get neighbours of
+   *
+   * @return Vector of frames adjacent to the given frame. If frame doesn't have neighbours, then
+   * it's an empty vector.
+   */
+  std::vector<Frame> GetAdjacentFrames(Frame frame) const {
+    if (!HasFrame(frame)) {
+      throw std::runtime_error("Frame does not exist in the graph");
+    }
+    return std::vector<Frame>(adjacent_frames_[frame].begin(), adjacent_frames_[frame].end());
+  }
+
+  /**
+   * @brief Return a map of all the raw transforms in the graph
+   *
+   * @return Map of transforms, where the keys are computed using `ComputeTransformId`
+   */
+  Transforms GetAllRawTransforms() const { return raw_transforms_; }
 
   /**
    * @brief Remove a frame from the graph. If the frame does not exist, then it throws an
