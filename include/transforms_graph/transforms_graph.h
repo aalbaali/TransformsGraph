@@ -53,7 +53,7 @@ class TransformsGraph {
    *
    * @return Maximum number of frames allowed in the graph
    */
-  int MaxFrames() const { return max_frames_; }
+  int GetMaxFrames() const { return max_frames_; }
 
   /**
    * @brief Check if a frame is in the graph
