@@ -307,12 +307,18 @@ class TransformsGraph {
   }
 
   /**
-   * @brief Adds frame into the graph, if it doesn't already exist.
+   * @brief Adds frame into the graph, if it doesn't already exist. Throws an exception if the
+   * maximum number of frames has been reached
    *
    * @param[in] frame Frame to add to the graph
    */
-  void AddFrame(Frame frame) noexcept {
+  void AddFrame(Frame frame) {
     if (HasFrame(frame)) return;
+    if (GetAllFrames().size() == max_frames_) {
+      std::stringstream ss;
+      ss << "Maximum number of frames (" << max_frames_ << ") reached. Not adding frame";
+      throw std::runtime_error(ss.str().c_str());
+    }
     adjacent_frames_.emplace(frame, std::unordered_set<Frame>());
   }
 
