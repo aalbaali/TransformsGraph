@@ -84,4 +84,12 @@ int main(int argc, char* argv[]) {
   } catch (const std::runtime_error& e) {
     std::cout << "Caught exception: " << e.what() << std::endl;
   }
+
+  // Removing a frame from the graph should delete all the transforms that are connected to it
+  transforms.RemoveFrame('a');
+  std::cout << "Graph after removing frame 'a'\n" << transforms.GetMermaidGraph(true) << std::endl;
+
+  // Removing a raw transform from the graph removes the transform but not the frames
+  transforms.RemoveRawTransform('f', 'c');
+  std::cout << "Graph after removing 'f->c' transform\n" << transforms.GetMermaidGraph(true) << std::endl;
 }

@@ -5,8 +5,8 @@
  * @date 2023-05-21
  */
 
-#ifndef transforms_graph_ABSTRACT_POSE_H_
-#define transforms_graph_ABSTRACT_POSE_H_
+#ifndef TRANSFORMS_GRAPH_ABSTRACT_POSE_H_
+#define TRANSFORMS_GRAPH_ABSTRACT_POSE_H_
 
 namespace tg {
 
@@ -18,4 +18,4 @@ class AbstractPose {
 
 }  // namespace tg
 
-#endif  // transforms_graph_ABSTRACT_POSE_H_
+#endif // TRANSFORMS_GRAPH_ABSTRACT_POSE_H_

@@ -5,11 +5,10 @@
  * @date 2023-05-21
  */
 
-// TODO: Add support to delete frames or transforms
-
 #ifndef TRANSFORMS_GRAPH_TRANSFORMS_GRAPH_H_
 #define TRANSFORMS_GRAPH_TRANSFORMS_GRAPH_H_
 
+#include <algorithm>
 #include <functional>
 #include <sstream>
 #include <stdexcept>
@@ -111,6 +110,15 @@ class TransformsGraph {
     const auto transform_id = ComputeTransformId(parent, child);
     return raw_transforms_.count(transform_id) > 0;
   }
+
+  /**
+   * @brief Check if a frame exists in the grap
+   *
+   * @param[in] frame The frame to check for
+   *
+   * @return True if the frame exists in the graph
+   */
+  bool HasFrame(Frame frame) const { return adjacent_frames_.count(frame) > 0; }
 
   /**
    * @brief Get the raw transform between two frames (irrespective of order). Throws an exception if
@@ -346,6 +354,52 @@ class TransformsGraph {
   void UpdateRawTransform(Frame parent, Frame child, const Transform& pose) {
     const auto transform_id = ComputeTransformId(parent, child);
     raw_transforms_[transform_id] = ShouldInvertFrames(parent, child) ? pose.inverse() : pose;
+  }
+
+  /**
+   * @brief Remove a transform from the graph. If the transform does not exist, then it throws an
+   * exception. Note that the frames are not deleted from the graph, even if they are no longer
+   * connected to other frames.
+   *
+   * @param[in] parent Parent frame
+   * @param[in] child Child frame
+   */
+  void RemoveRawTransform(Frame parent, Frame child) {
+    if (!HasRawTransform(parent, child)) {
+      throw std::runtime_error("Transform does not exist in the graph");
+    }
+
+    const auto transform_id = ComputeTransformId(parent, child);
+    raw_transforms_.erase(transform_id);
+  }
+
+  /**
+   * @brief Return a vector of all frames in the graph
+   *
+   * @return Vector of unordered frames in the graph
+   */
+  std::vector<Frame> GetAllFrames() const {
+    return std::vector<Frame>(adjacent_frames_.begin(), adjacent_frames_.end());
+  }
+
+  /**
+   * @brief Remove a frame from the graph. If the frame does not exist, then it throws an
+   * exception
+   *
+   * @param[in] frame to delete
+   */
+  void RemoveFrame(Frame frame) {
+    if (!HasFrame(frame)) {
+      throw std::runtime_error("Frame does not exist in the graph");
+    }
+
+    // Remove all transforms from/to this frame
+    for (const auto& neighbour : adjacent_frames_[frame]) {
+      RemoveRawTransform(frame, neighbour);
+    }
+
+    // Remove the frame from the graph
+    adjacent_frames_.erase(frame);
   }
 
  private:
