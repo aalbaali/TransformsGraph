@@ -125,7 +125,7 @@ int main(int argc, char* argv[]) {
   ////   return -1;
   //// }
 
-  std::cout << transforms.GetTransformChain(start, end, true) << std::endl;
+  std::cout << transforms.GetTransformChainString(start, end, true) << std::endl;
   std::cout << transforms.GetTransform(start, end).matrix() << std::endl;
 
   std::cout << transforms.GetMermaidGraph(get_frame_names) << std::endl;

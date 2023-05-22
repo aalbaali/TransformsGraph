@@ -1,0 +1,4 @@
+find_package(Eigen3 REQUIRED)
+
+add_executable(minimal_graph_example minimal_graph_example.cpp)
+target_link_libraries(minimal_graph_example TransformGraph)
