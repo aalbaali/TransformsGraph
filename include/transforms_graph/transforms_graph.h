@@ -8,7 +8,6 @@
 #ifndef TRANSFORMS_GRAPH_TRANSFORMS_GRAPH_H_
 #define TRANSFORMS_GRAPH_TRANSFORMS_GRAPH_H_
 
-#include <algorithm>
 #include <functional>
 #include <sstream>
 #include <stdexcept>
@@ -235,7 +234,9 @@ class TransformsGraph {
                               bool show_edges = false) const {
     std::stringstream ss;
     ss << "graph TD" << std::endl;
-    for (const auto& [frame, neighbours] : adjacent_frames_) {
+    for (const auto& kv : adjacent_frames_) {
+      const auto frame = kv.first;
+      const auto neighbours = kv.second;
       ss << "  " << get_frame_name(frame) << std::endl;
       for (const auto& neighbour : neighbours) {
         // To keep the direction of the transforms (as they are stored in the graph), ignore the
