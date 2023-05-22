@@ -6,7 +6,7 @@
  */
 #include <iostream>
 
-#include "transform_graph/transform_graph.h"
+#include "transforms_graph/transforms_graph.h"
 
 /**
  * @brief A simple class to represent a displacement
@@ -43,7 +43,7 @@ int main(int argc, char* argv[]) {
   using Transform = Displacement;
 
   // Construct a graph that consists of two unconnected subgraphs
-  tg::TransformGraph<Transform, Frame> transforms;
+  tg::TransformsGraph<Transform, Frame> transforms;
   transforms.AddTransform('a', 'b', 1);
   transforms.AddTransform('a', 'c', 2);
   transforms.AddTransform('b', 'd', 3);

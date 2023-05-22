@@ -1,5 +1,5 @@
 /**
- * @file transform_graph.h
+ * @file transforms_graph.h
  * @brief Core of the transform graph
  * @author Amro Al-Baali
  * @date 2023-05-21
@@ -10,8 +10,8 @@
 // "chained transform" but not a "raw transform"
 // This will make it easier to modify the graph
 
-#ifndef TRANSFORM_GRAPH_TRANSFORM_GRAPH_H_
-#define TRANSFORM_GRAPH_TRANSFORM_GRAPH_H_
+#ifndef TRANSFORMS_GRAPH_TRANSFORMS_GRAPH_H_
+#define TRANSFORMS_GRAPH_TRANSFORMS_GRAPH_H_
 
 #include <functional>
 #include <sstream>
@@ -29,7 +29,7 @@ namespace tg {
  * @brief Transform graph class
  */
 template <typename Transform, typename Frame = char>
-class TransformGraph {
+class TransformsGraph {
  public:
   using TransformId = int;
   // Graph of frames and transforms
@@ -43,7 +43,7 @@ class TransformGraph {
    *
    * @param[in] max_frames Maximum number of frames allowed in the graph
    */
-  TransformGraph(int max_frames = 100) : max_frames_(max_frames) {}
+  TransformsGraph(int max_frames = 100) : max_frames_(max_frames) {}
 
   /**
    * @brief Get maximum number allowed in the transform graph
@@ -359,4 +359,4 @@ class TransformGraph {
 };
 
 }  // namespace tg
-#endif  // TRANSFORM_GRAPH_TRANSFORM_GRAPH_H_
+#endif // TRANSFORMS_GRAPH_TRANSFORMS_GRAPH_H_

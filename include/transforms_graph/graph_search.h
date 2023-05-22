@@ -5,8 +5,8 @@
  * @date 2023-05-21
  */
 
-#ifndef TRANSFORM_GRAPH_GRAPH_SEARCH_H_
-#define TRANSFORM_GRAPH_GRAPH_SEARCH_H_
+#ifndef transforms_graph_GRAPH_SEARCH_H_
+#define transforms_graph_GRAPH_SEARCH_H_
 
 #include <algorithm>
 #include <queue>
@@ -118,4 +118,4 @@ std::vector<Node> BFS(const Graph& graph, Node start, Node end) {
 
 }  // namespace tg
 
-#endif  // TRANSFORM_GRAPH_GRAPH_SEARCH_H_
+#endif  // transforms_graph_GRAPH_SEARCH_H_

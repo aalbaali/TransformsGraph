@@ -9,8 +9,8 @@
 // Include Eigen geometry
 #include <Eigen/Geometry>
 
-#include "transform_graph/abstract_pose.h"
-#include "transform_graph/transform_graph.h"
+#include "transforms_graph/abstract_pose.h"
+#include "transforms_graph/transforms_graph.h"
 
 //// Fake pose class
 // class Pose : public tg::AbstractPose<Pose> {
@@ -79,7 +79,7 @@ int main(int argc, char* argv[]) {
   // std::cout << p2.inverse().matrix() << std::endl;
 
   // Example of constructing a graph
-  // tg::TransformGraph<Pose, Frame> transforms;
+  // tg::TransformsGraph<Pose, Frame> transforms;
   // transforms.AddTransform('a', 'b', 1);
   // transforms.AddTransform('a', 'c', 2);
   // transforms.AddTransform('b', 'd', 3);
@@ -91,7 +91,7 @@ int main(int argc, char* argv[]) {
                                                         {Frame::CAMERA, "Camera"},
                                                         {Frame::FRONT_LIDAR, "Front_lidar"}};
 
-  tg::TransformGraph<Pose, Frame> transforms;
+  tg::TransformsGraph<Pose, Frame> transforms;
   transforms.AddTransform(Frame::MAP, Frame::ODOM, Pose({1, 2}, 0.0));
   transforms.AddTransform(Frame::BASE_LINK, Frame::CAMERA, Pose({0.5, 0.0}, 0.0));
   transforms.AddTransform(Frame::BASE_LINK, Frame::FRONT_LIDAR, Pose({2, 1}, M_PI_4));
