@@ -20,3 +20,9 @@ option(BUILD_EXAMPLES "Build examples" OFF)
 if(BUILD_EXAMPLES)
   add_subdirectory(examples)
 endif()
+
+# Add option to build tests
+option(BUILD_TESTS "Build tests" OFF)
+if(BUILD_TESTS)
+  add_subdirectory(tests)
+endif()
