@@ -21,7 +21,7 @@ jobs:
 
     steps:
     - name: Install required packages
-      run: sudo apt-get install -y libgtest-dev
+      run: sudo apt-get install -y libeigen3-dev
 
     - uses: actions/checkout@v3
 
