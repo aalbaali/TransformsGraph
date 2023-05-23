@@ -1,3 +1,10 @@
+/**
+ * @file test_transforms_graph.cpp
+ * @brief Unit tests for the TransformsGraph class using 'Frame = char' and 'Transform =
+ * Displacement'
+ * @author Amro Al-Baali
+ * @date 2023-05-22
+ */
 #include <gtest/gtest.h>
 
 #include <iostream>
@@ -63,6 +70,20 @@ TEST(TransformsGraph, EmptyGraph) {
   // Create a new graph with more max frames, and check that it's correct
   TransformsGraph transforms2(10);
   EXPECT_EQ(transforms2.GetMaxFrames(), 10);
+}
+
+TEST(TransformsGraph, GetTransform) {
+  const auto transforms = ConstructTwoSubgraphs();
+
+  // Single-direction chains
+  EXPECT_DOUBLE_EQ(transforms.GetTransform('a', 'b').x(), 1);
+  EXPECT_DOUBLE_EQ(transforms.GetTransform('b', 'a').x(), -1);
+  EXPECT_DOUBLE_EQ(transforms.GetTransform('a', 'd').x(), 1 + 3);
+  EXPECT_DOUBLE_EQ(transforms.GetTransform('d', 'a').x(), -(1 + 3));
+
+  // Bi-directional chains
+  EXPECT_DOUBLE_EQ(transforms.GetTransform('c', 'd').x(), -2 + 1 + 3);
+  EXPECT_DOUBLE_EQ(transforms.GetTransform('d', 'c').x(), -3 - 1 + 2);
 }
 
 TEST(TransformsGraph, IdentityOperations) {
