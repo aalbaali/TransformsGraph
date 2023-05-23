@@ -428,7 +428,8 @@ class TransformsGraph {
     }
 
     // Remove all transforms from/to this frame
-    for (const auto& neighbour : adjacent_frames_[frame]) {
+    const auto adjacent_frames = GetAdjacentFrames(frame);
+    for (const auto& neighbour : adjacent_frames) {
       RemoveRawTransform(frame, neighbour);
     }
 
