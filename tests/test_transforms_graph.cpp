@@ -38,7 +38,11 @@ using Frame = char;
 using Transform = Displacement;
 using TransformsGraph = tg::TransformsGraph<Displacement, Frame>;
 
-// Construct a simple graph
+/**
+ * @brief Construct a simple transforms graph using Frame as char
+ *
+ * @return
+ */
 TransformsGraph ConstructTwoSubgraphs() {
   // Graph:
   //        -> b -> d
@@ -56,6 +60,59 @@ TransformsGraph ConstructTwoSubgraphs() {
 
   // Second connected subgraph
   transforms.AddTransform('e', 'f', 4);
+  return transforms;
+}
+
+enum class EnumFrame { a, b, c, d, e, f };
+
+/**
+ * @brief Construct same graph from ConstructTwoSubgraphs() but using Frame as an enum class
+ *
+ * @return
+ */
+tg::TransformsGraph<Displacement, EnumFrame> ConstructTwoSubgraphsEnumFrame() {
+  tg::TransformsGraph<Displacement, EnumFrame> transforms;
+  // First connected subgraph
+  transforms.AddTransform(EnumFrame::a, EnumFrame::b, 1);
+  transforms.AddTransform(EnumFrame::a, EnumFrame::c, 2);
+  transforms.AddTransform(EnumFrame::b, EnumFrame::d, 3);
+
+  // Second connected subgraph
+  transforms.AddTransform(EnumFrame::e, EnumFrame::f, 4);
+  return transforms;
+}
+
+/**
+ * @brief Construct same graph from ConstructTwoSubgraphs() but using Frame as int
+ *
+ * @return
+ */
+tg::TransformsGraph<Displacement, int> ConstructTwoSubgraphsIntFrame() {
+  tg::TransformsGraph<Displacement, int> transforms;
+  // First connected subgraph
+  transforms.AddTransform(1, 2, 1);
+  transforms.AddTransform(1, 3, 2);
+  transforms.AddTransform(2, 4, 3);
+
+  // Second connected subgraph
+  transforms.AddTransform(5, 6, 4);
+  return transforms;
+}
+
+/**
+ * @brief Construct same graph from ConstructTwoSubgraphs() but using Frame as size_t
+ *
+ * @return
+ */
+tg::TransformsGraph<Displacement, size_t> ConstructTwoSubgraphsSizetFrame() {
+  tg::TransformsGraph<Displacement, size_t> transforms;
+  // First connected subgraph
+  transforms.AddTransform(1, 2, 1);
+  transforms.AddTransform(1, 3, 2);
+  transforms.AddTransform(2, 4, 3);
+
+  // Second connected subgraph
+  transforms.AddTransform(5, 6, 4);
   return transforms;
 }
 
@@ -247,6 +304,48 @@ TEST(TransformsGraph, RemoveFrame) {
   EXPECT_FALSE(transforms.HasTransform('a', 'c'));
   EXPECT_FALSE(transforms.HasTransform('c', 'd'));
   EXPECT_TRUE(transforms.HasTransform('b', 'd'));
+}
+
+TEST(TransformsGraph, UsingEnumClassFrame) {
+  const auto transforms = ConstructTwoSubgraphsEnumFrame();
+
+  // Single-direction chains
+  EXPECT_DOUBLE_EQ(transforms.GetTransform(EnumFrame::a, EnumFrame::b).x(), 1);
+  EXPECT_DOUBLE_EQ(transforms.GetTransform(EnumFrame::b, EnumFrame::a).x(), -1);
+  EXPECT_DOUBLE_EQ(transforms.GetTransform(EnumFrame::a, EnumFrame::d).x(), 1 + 3);
+  EXPECT_DOUBLE_EQ(transforms.GetTransform(EnumFrame::d, EnumFrame::a).x(), -(1 + 3));
+
+  // Bi-directional chains
+  EXPECT_DOUBLE_EQ(transforms.GetTransform(EnumFrame::c, EnumFrame::d).x(), -2 + 1 + 3);
+  EXPECT_DOUBLE_EQ(transforms.GetTransform(EnumFrame::d, EnumFrame::c).x(), -3 - 1 + 2);
+}
+
+TEST(TransformsGraph, UsingIntFrame) {
+  const auto transforms = ConstructTwoSubgraphsIntFrame();
+
+  // Single-direction chains
+  EXPECT_DOUBLE_EQ(transforms.GetTransform(1, 2).x(), 1);
+  EXPECT_DOUBLE_EQ(transforms.GetTransform(2, 1).x(), -1);
+  EXPECT_DOUBLE_EQ(transforms.GetTransform(1, 4).x(), 1 + 3);
+  EXPECT_DOUBLE_EQ(transforms.GetTransform(4, 1).x(), -(1 + 3));
+
+  // Bi-directional chains
+  EXPECT_DOUBLE_EQ(transforms.GetTransform(3, 4).x(), -2 + 1 + 3);
+  EXPECT_DOUBLE_EQ(transforms.GetTransform(4, 3).x(), -3 - 1 + 2);
+}
+
+TEST(TransformsGraph, UsingSizetFrame) {
+  const auto transforms = ConstructTwoSubgraphsSizetFrame();
+
+  // Single-direction chains
+  EXPECT_DOUBLE_EQ(transforms.GetTransform(1, 2).x(), 1);
+  EXPECT_DOUBLE_EQ(transforms.GetTransform(2, 1).x(), -1);
+  EXPECT_DOUBLE_EQ(transforms.GetTransform(1, 4).x(), 1 + 3);
+  EXPECT_DOUBLE_EQ(transforms.GetTransform(4, 1).x(), -(1 + 3));
+
+  // Bi-directional chains
+  EXPECT_DOUBLE_EQ(transforms.GetTransform(3, 4).x(), -2 + 1 + 3);
+  EXPECT_DOUBLE_EQ(transforms.GetTransform(4, 3).x(), -3 - 1 + 2);
 }
 
 int main(int argc, char* argv[]) {
