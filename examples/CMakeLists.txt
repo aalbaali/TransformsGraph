@@ -2,3 +2,7 @@ find_package(Eigen3 REQUIRED)
 
 add_executable(minimal_graph_example minimal_graph_example.cpp)
 target_link_libraries(minimal_graph_example TransformsGraph)
+
+add_executable(eigen_pose_example eigen_pose_example.cpp)
+target_link_libraries(eigen_pose_example PUBLIC TransformsGraph Eigen3::Eigen)
+#target_include_directories(eigen_pose_example ${EIGEN3_INCLUDE_DIR} TransformsGraph)

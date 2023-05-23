@@ -1,3 +1,10 @@
+/** 
+* @file eigen_pose_example.cpp
+* @brief Run an example using Eigen Affine2d
+* @author Amro Al-Baali
+* @version 
+  * @date 2023-05-23
+  */
 #include <algorithm>
 #include <iostream>
 #include <queue>
