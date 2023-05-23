@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.16)
 project(TransformsGraph)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -21,6 +21,8 @@ if(BUILD_EXAMPLES)
   add_subdirectory(examples)
 endif()
 
+enable_testing()
+include(CTest)
 # Add option to build tests
 option(BUILD_TESTS "Build tests" OFF)
 if(BUILD_TESTS)
