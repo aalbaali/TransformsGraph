@@ -14,14 +14,14 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "graph_search.h"
+#include "transforms_graph/graph_search.h"
 
 namespace tg {
 
 /**
  * @brief Transform graph class
- * @tparam Transform Transform/pose type
- * @tparam Frame Frame type (e.g. char, int, etc.)
+ * @tparam Transform Transform/pose type. Should have `*`, `<<`, and `inverse()` defined
+ * @tparam Frame Frame type (e.g. char, int, etc.). Should have `<<` defined.
  */
 template <typename Transform, typename Frame = char>
 class TransformsGraph {
@@ -278,8 +278,7 @@ class TransformsGraph {
    * @param[in] pose Transform from parent to child. That is, for a displacement `r_child` resolved
    * in the `child` frame, it can be resolved in the parent frame using `r_parent = pose * r_child`
    */
-  void AddTransform(Frame parent, Frame child, const Transform& pose,
-                    bool should_override = false) {
+  void AddTransform(Frame parent, Frame child, Transform&& pose, bool should_override = false) {
     // Handle the case where the transform exists. The only situation in which the transform is
     // overridden is if the override flag is set tot true AND the transform to be updated is a raw
     // transform
@@ -304,7 +303,7 @@ class TransformsGraph {
     adjacent_frames_[child].insert(parent);
 
     // Insert/update raw transform into the graph
-    AddRawTransform(parent, child, pose);
+    AddRawTransform(parent, child, std::move(pose));
   }
 
   /**

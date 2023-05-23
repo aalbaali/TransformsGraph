@@ -91,5 +91,6 @@ int main(int argc, char* argv[]) {
 
   // Removing a raw transform from the graph removes the transform but not the frames
   transforms.RemoveRawTransform('f', 'c');
-  std::cout << "Graph after removing 'f->c' transform\n" << transforms.GetMermaidGraph(true) << std::endl;
+  std::cout << "Graph after removing 'f->c' transform\n"
+            << transforms.GetMermaidGraph(true) << std::endl;
 }
