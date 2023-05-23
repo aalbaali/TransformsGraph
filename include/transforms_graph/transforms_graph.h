@@ -177,13 +177,14 @@ class TransformsGraph {
    * @param[in] parent Parent frame
    * @param[in] child Child frame
    *
-   * @return
+   * @return Chain of transforms between the two frames (e.g., 'b->c' is given by "T_a_b^-1 ->
+   * T_a_c"). If no transform exists, an empty string is returned.
    */
   std::string GetTransformChainString(Frame parent, Frame child,
                                       bool show_transforms = false) const {
     const auto paths = GetTransformChain(parent, child);
     if (paths.size() == 0) {
-      throw std::runtime_error("No transform exists between the two frames");
+      return "";
     }
 
     std::stringstream ss_frames;
@@ -303,7 +304,7 @@ class TransformsGraph {
     adjacent_frames_[child].insert(parent);
 
     // Insert/update raw transform into the graph
-    UpdateRawTransform(parent, child, pose);
+    AddRawTransform(parent, child, pose);
   }
 
   /**
@@ -339,8 +340,8 @@ class TransformsGraph {
   }
 
   /**
-   * @brief Update or insert a raw transform into the graph. This function assumes that the frames
-   * already exist in the dictionary.
+   * @brief Update or insert a raw transform into the graph. Throws an exception if the frames are
+   * not in the graph.
    *
    * @details Note that the function takes care of the order. That is, `T_a_b` and `T_b_a` are
    * treated as one.
@@ -350,6 +351,9 @@ class TransformsGraph {
    * @param[in] pose Transform from parent to child. That is, for a displacement `r_child` resolved
    */
   void UpdateRawTransform(Frame parent, Frame child, const Transform& pose) {
+    if (!HasRawTransform(parent, child)) {
+      throw std::runtime_error("Transform does not exist in the graph");
+    }
     const auto transform_id = ComputeTransformId(parent, child);
     raw_transforms_[transform_id] = ShouldInvertFrames(parent, child) ? pose.inverse() : pose;
   }
@@ -367,8 +371,13 @@ class TransformsGraph {
       throw std::runtime_error("Transform does not exist in the graph");
     }
 
+    // Remove raw transform
     const auto transform_id = ComputeTransformId(parent, child);
     raw_transforms_.erase(transform_id);
+
+    // Remove edges from the graph
+    adjacent_frames_[parent].erase(child);
+    adjacent_frames_[child].erase(parent);
   }
 
   /**
@@ -397,7 +406,7 @@ class TransformsGraph {
     if (!HasFrame(frame)) {
       throw std::runtime_error("Frame does not exist in the graph");
     }
-    return std::vector<Frame>(adjacent_frames_[frame].begin(), adjacent_frames_[frame].end());
+    return std::vector<Frame>(adjacent_frames_.at(frame).begin(), adjacent_frames_.at(frame).end());
   }
 
   /**
@@ -428,6 +437,29 @@ class TransformsGraph {
   }
 
  private:
+  /**
+   * @brief Add a raw transform into the graph. Throws an exception if the transform already exists
+   * in the graph.
+   *
+   * @details This function is used internally and is not expected to be exposed to the user. The
+   * user should instead use the `AddTransform` function.
+   *
+   * @param[in] parent Parent frame
+   * @param[in] child Child frame
+   * @param[in] pose T_parent_child
+   */
+  void AddRawTransform(Frame parent, Frame child, const Transform& pose) {
+    if (HasRawTransform(parent, child)) {
+      throw std::runtime_error("Raw transform already exists");
+    }
+    // Add frames if they're not already in the graph
+    if (!HasFrame(parent)) AddFrame(parent);
+    if (!HasFrame(child)) AddFrame(child);
+
+    const auto transform_id = ComputeTransformId(parent, child);
+    raw_transforms_[transform_id] = ShouldInvertFrames(parent, child) ? pose.inverse() : pose;
+  }
+
   /**
    * @brief Compute a unique ID for a transform between two frames. The order matters (i.e., the ID
    * for `T_a_b` will be different than `T_b_a`). Check `ComputeTransformId` for an order-agnostic

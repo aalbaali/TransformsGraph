@@ -48,7 +48,7 @@ TransformsGraph ConstructTwoSubgraphs() {
   transforms.AddTransform('b', 'd', 3);
 
   // Second connected subgraph
-  transforms.AddTransform('e', 'f', 3);
+  transforms.AddTransform('e', 'f', 4);
   return transforms;
 }
 
@@ -146,30 +146,87 @@ TEST(TransformsGraph, ExceedingMaxFrames) {
   EXPECT_EQ(transforms.GetAllRawTransforms().size(), 1);
 }
 
-// Tests to add:
-// - TransformsGraph(int max_frames = 100)
-// - MaxFrames() const
-// - HasFrame(Frame frame) const
-// - GetTransformChain(Frame parent, Frame child) const
-// - HasTransform(Frame parent, Frame child) const
-// - HasRawTransform(Frame parent, Frame child) const
-// - GetRawTransform(Frame parent, Frame child) const
-// - GetTransform(Frame parent, Frame child) const
-// - GetTransformChainString(Frame parent, Frame child, bool show_transforms = false) const
-// - GetMermaidGraph(const std::function<std::string(Frame)>& get_frame_name, bool show_edges =
-// false) const
-// - GetMermaidGraph(bool show_edges = false) const
-// - AddTransform(Frame parent, Frame child, const Transform& pose, bool should_override = false)
-// - UpdateRawTransform(Frame parent, Frame child, const Transform& pose)
-// - RemoveRawTransform(Frame parent, Frame child)
-// - GetAllFrames() const
-// - GetAdjacentFrames(Frame frame) const
-// - GetAllRawTransforms() const
-// - RemoveFrame(Frame frame)
+TEST(TransformsGraph, TransformChain) {
+  auto transforms = ConstructTwoSubgraphs();
 
-// Chained transform
-// Inverse chained transform
-// Frames
+  // Get all the transform chain
+  const auto frames_chain = transforms.GetTransformChain('c', 'd');
+  EXPECT_EQ(frames_chain.size(), 4);
+
+  EXPECT_EQ(frames_chain[0], 'c');
+  EXPECT_EQ(frames_chain[1], 'a');
+  EXPECT_EQ(frames_chain[2], 'b');
+  EXPECT_EQ(frames_chain[3], 'd');
+
+  // Get string chain
+  const std::string frames_chain_string = transforms.GetTransformChainString('c', 'd');
+  const std::string expected_str = "T_a_c^-1 -> T_a_b -> T_b_d -> ";
+  EXPECT_STREQ(frames_chain_string.c_str(), expected_str.c_str());
+
+  // If no chain exists
+  transforms.AddFrame('e');
+  const auto frames_chain_2 = transforms.GetTransformChain('c', 'e');
+  EXPECT_EQ(frames_chain_2.size(), 0);
+
+  const std::string frames_chain_string_2 = transforms.GetTransformChainString('c', 'e');
+  EXPECT_STREQ(frames_chain_string_2.c_str(), "");
+}
+
+TEST(TransformsGraph, UpdatingRawTransform) {
+  auto transforms = ConstructTwoSubgraphs();
+
+  EXPECT_DOUBLE_EQ(transforms.GetTransform('a', 'b').x(), 1);
+  EXPECT_NO_THROW(transforms.UpdateRawTransform('a', 'b', 7));
+  EXPECT_DOUBLE_EQ(transforms.GetTransform('a', 'b').x(), 7);
+
+  // Expect throw when updating a non-existing transform
+  EXPECT_ANY_THROW(transforms.UpdateRawTransform('a', 'e', 7));
+}
+
+TEST(TransformsGraph, GetAdjacentFrames) {
+  const auto transforms = ConstructTwoSubgraphs();
+
+  EXPECT_EQ(transforms.GetAdjacentFrames('a').size(), 2);
+  EXPECT_EQ(transforms.GetAdjacentFrames('b').size(), 2);
+  EXPECT_EQ(transforms.GetAdjacentFrames('c').size(), 1);
+  EXPECT_EQ(transforms.GetAdjacentFrames('d').size(), 1);
+}
+
+TEST(TransformsGraph, RemoveRawTransform) {
+  auto transforms = ConstructTwoSubgraphs();
+
+  // Exception should be thrown if removing a non-raw transform, even if it's chained
+  EXPECT_TRUE(transforms.HasTransform('a', 'd'));
+  EXPECT_FALSE(transforms.HasRawTransform('a', 'd'));
+  EXPECT_ANY_THROW(transforms.RemoveRawTransform('a', 'd'));
+  EXPECT_ANY_THROW(transforms.RemoveRawTransform('y', 'z'));
+
+  // Remove a transform that will split the graph into two subgraphs
+  EXPECT_NO_THROW(transforms.RemoveRawTransform('a', 'b'));
+
+  // There should no longer be a chained transform between a and d
+  EXPECT_FALSE(transforms.HasTransform('a', 'd'));
+  EXPECT_EQ(transforms.GetAdjacentFrames('a').size(), 1);
+  EXPECT_EQ(transforms.GetAdjacentFrames('b').size(), 1);
+}
+
+TEST(TransformsGraph, RemoveFrame) {
+  auto transforms = ConstructTwoSubgraphs();
+
+  // Exception should be thrown if removing a non-existent frame
+  EXPECT_ANY_THROW(transforms.RemoveFrame('y'));
+
+  // Removing frame 'a' should divide the first subgraph into two subgraphs
+  EXPECT_TRUE(transforms.HasFrame('a'));
+  EXPECT_NO_THROW(transforms.RemoveFrame('a'));
+  EXPECT_FALSE(transforms.HasFrame('a'));
+  EXPECT_FALSE(transforms.HasRawTransform('a', 'b'));
+  EXPECT_FALSE(transforms.HasRawTransform('a', 'c'));
+  EXPECT_FALSE(transforms.HasTransform('a', 'b'));
+  EXPECT_FALSE(transforms.HasTransform('a', 'c'));
+  EXPECT_FALSE(transforms.HasTransform('c', 'd'));
+  EXPECT_TRUE(transforms.HasTransform('b', 'd'));
+}
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
