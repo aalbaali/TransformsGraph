@@ -63,22 +63,41 @@ TransformsGraph ConstructTwoSubgraphs() {
   return transforms;
 }
 
-enum class EnumFrame { a, b, c, d, e, f };
+enum class EnumClassFrame { a, b, c, d, e, f };
+
+enum EnumFrame { A, B, C, D, E, F };
 
 /**
  * @brief Construct same graph from ConstructTwoSubgraphs() but using Frame as an enum class
  *
  * @return
  */
-tg::TransformsGraph<Displacement, EnumFrame> ConstructTwoSubgraphsEnumFrame() {
-  tg::TransformsGraph<Displacement, EnumFrame> transforms;
+tg::TransformsGraph<Displacement, EnumClassFrame> ConstructTwoSubgraphsEnumFrame() {
+  tg::TransformsGraph<Displacement, EnumClassFrame> transforms;
   // First connected subgraph
-  transforms.AddTransform(EnumFrame::a, EnumFrame::b, 1);
-  transforms.AddTransform(EnumFrame::a, EnumFrame::c, 2);
-  transforms.AddTransform(EnumFrame::b, EnumFrame::d, 3);
+  transforms.AddTransform(EnumClassFrame::a, EnumClassFrame::b, 1);
+  transforms.AddTransform(EnumClassFrame::a, EnumClassFrame::c, 2);
+  transforms.AddTransform(EnumClassFrame::b, EnumClassFrame::d, 3);
 
   // Second connected subgraph
-  transforms.AddTransform(EnumFrame::e, EnumFrame::f, 4);
+  transforms.AddTransform(EnumClassFrame::e, EnumClassFrame::f, 4);
+  return transforms;
+}
+
+/**
+ * @brief Construct same graph from ConstructTwoSubgraphs() but using Frame as an enum (not class)
+ *
+ * @return Constructed graph
+ */
+tg::TransformsGraph<Displacement, EnumFrame> ConstructTwoSubgraphsFrame() {
+  tg::TransformsGraph<Displacement, EnumFrame> transforms;
+  // First connected subgraph
+  transforms.AddTransform(A, B, 1);
+  transforms.AddTransform(A, C, 2);
+  transforms.AddTransform(B, D, 3);
+
+  // Second connected subgraph
+  transforms.AddTransform(E, F, 4);
   return transforms;
 }
 
@@ -310,14 +329,28 @@ TEST(TransformsGraph, UsingEnumClassFrame) {
   const auto transforms = ConstructTwoSubgraphsEnumFrame();
 
   // Single-direction chains
-  EXPECT_DOUBLE_EQ(transforms.GetTransform(EnumFrame::a, EnumFrame::b).x(), 1);
-  EXPECT_DOUBLE_EQ(transforms.GetTransform(EnumFrame::b, EnumFrame::a).x(), -1);
-  EXPECT_DOUBLE_EQ(transforms.GetTransform(EnumFrame::a, EnumFrame::d).x(), 1 + 3);
-  EXPECT_DOUBLE_EQ(transforms.GetTransform(EnumFrame::d, EnumFrame::a).x(), -(1 + 3));
+  EXPECT_DOUBLE_EQ(transforms.GetTransform(EnumClassFrame::a, EnumClassFrame::b).x(), 1);
+  EXPECT_DOUBLE_EQ(transforms.GetTransform(EnumClassFrame::b, EnumClassFrame::a).x(), -1);
+  EXPECT_DOUBLE_EQ(transforms.GetTransform(EnumClassFrame::a, EnumClassFrame::d).x(), 1 + 3);
+  EXPECT_DOUBLE_EQ(transforms.GetTransform(EnumClassFrame::d, EnumClassFrame::a).x(), -(1 + 3));
 
   // Bi-directional chains
-  EXPECT_DOUBLE_EQ(transforms.GetTransform(EnumFrame::c, EnumFrame::d).x(), -2 + 1 + 3);
-  EXPECT_DOUBLE_EQ(transforms.GetTransform(EnumFrame::d, EnumFrame::c).x(), -3 - 1 + 2);
+  EXPECT_DOUBLE_EQ(transforms.GetTransform(EnumClassFrame::c, EnumClassFrame::d).x(), -2 + 1 + 3);
+  EXPECT_DOUBLE_EQ(transforms.GetTransform(EnumClassFrame::d, EnumClassFrame::c).x(), -3 - 1 + 2);
+}
+
+TEST(TransformsGraph, UsingEnumFrame) {
+  const auto transforms = ConstructTwoSubgraphsFrame();
+
+  // Single-direction chains
+  EXPECT_DOUBLE_EQ(transforms.GetTransform(A, B).x(), 1);
+  EXPECT_DOUBLE_EQ(transforms.GetTransform(B, A).x(), -1);
+  EXPECT_DOUBLE_EQ(transforms.GetTransform(A, D).x(), 1 + 3);
+  EXPECT_DOUBLE_EQ(transforms.GetTransform(D, A).x(), -(1 + 3));
+
+  // Bi-directional chains
+  EXPECT_DOUBLE_EQ(transforms.GetTransform(C, D).x(), -2 + 1 + 3);
+  EXPECT_DOUBLE_EQ(transforms.GetTransform(D, C).x(), -3 - 1 + 2);
 }
 
 TEST(TransformsGraph, UsingIntFrame) {
