@@ -6,8 +6,11 @@ set(CMAKE_CXX_FLAGS "-std=c++11")
 
 # Add header-only library
 add_library(TransformsGraph INTERFACE)
-add_library(TG::TransformsGraph ALIAS TransformsGraph)
-target_include_directories(TransformsGraph INTERFACE $<INSTALL_INTERFACE:include>)
+add_library(TransformsGraph::TransformsGraph ALIAS TransformsGraph)
+target_include_directories(TransformsGraph INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>  
+    $<INSTALL_INTERFACE:include>
+)
 
 
 # Add option to build examples
