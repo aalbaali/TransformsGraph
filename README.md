@@ -1,3 +1,5 @@
+![Build status](https://github.com/aalbaali/TransformsGraph/actions/workflows/test.yaml/badge.svg)
+
 # TransformsGraph
 A C++ directed-acyclic graph data structure to hold transforms between reference frames.
 
