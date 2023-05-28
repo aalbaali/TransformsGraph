@@ -45,10 +45,17 @@ int main(int argc, char* argv[]) {
   const Eigen::Vector2d v_a = T_a_b * v_b;
   std::cout << "[" << v_a.transpose() << "]_a = [" << v_b.transpose() << "]_b" << std::endl;
 
+  std::unordered_map<Frame, std::string> frame_names = {{Frame::A, "Map"},
+                                                        {Frame::B, "Odom"},
+                                                        {Frame::C, "Baselink"},
+                                                        {Frame::D, "Camera"},
+                                                        {Frame::E, "Front_lidar"},
+                                                        {Frame::F, "Rear_lidar"}};
+  const auto get_frame_names = [&frame_names](Frame frame) { return frame_names[frame]; };
   // Visualize the graph using mermaid graph. Copy the output and run on
   // https://mermaid-js.github.io/mermaid-live-editor
   // You should see the two unconnected subgraphs
-  std::cout << transforms.GetMermaidGraph(true) << std::endl;
+  std::cout << transforms.GetMermaidGraph(get_frame_names, false) << std::endl;
 
   // There are some ways to check if a transform exists between two frames
   std::cout << "Does a->b exist? " << transforms.HasTransform(Frame::A, Frame::B) << std::endl;
