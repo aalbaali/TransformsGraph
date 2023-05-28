@@ -131,6 +131,35 @@ graph TD
   A --> | x: 0, y: 0, theta: 0.785398 | B
 ```
 
+Furthermore, the `GetMermaidGraph` function takes a unary function that takes a frame and returns a string.
+This function can be used to override the frame names in the graph.
+For example,
+```C++
+std::unordered_map<Frame, std::string> frame_names = {{Frame::MAP, "Map"},
+                                                        {Frame::ODOM, "Odom"},
+                                                        {Frame::BASE_LINK, "Baselink"},
+                                                        {Frame::CAMERA, "Camera"},
+                                                        {Frame::FRONT_LIDAR, "Front_lidar"}};
+const auto get_frame_names = [&frame_names](Frame frame) { return frame_names[frame]; };
+std::cout << transforms.GetMermaidGraph(get_frame_names) << std::endl;
+```
+results in
+```mermaid
+graph TD
+  Rear_lidar
+  Front_lidar
+  Front_lidar --> Rear_lidar
+  Camera
+  Baselink
+  Odom
+  Odom --> Camera
+  Map
+  Map --> Baselink
+  Map --> Odom
+```
+
+The transforms can be visualized for this option as well by passing `true` as the second argument to `GetMermaidGraph`.
+
 # Installation
 This is a header-only library.
 It can be used by directly including the `include/transforms_graph/transforms_graph.h` into your folder, or it can be installed on your system by running the following from the root of this repo.
