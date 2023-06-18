@@ -13,6 +13,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <stack>
 
 namespace tg {
 /**
@@ -29,13 +30,13 @@ std::vector<Node> DFS(const Graph& graph, Node start, Node end) {
   std::vector<Node> path;
   std::unordered_set<Node> visited;
   std::unordered_map<Node, Node> parent;
-  std::vector<Node> stack;
+  std::stack<Node> stack;
 
   bool found_solution = false;
-  stack.push_back(start);
+  stack.push(start);
   while (!stack.empty()) {
-    Node current = stack.back();
-    stack.pop_back();
+    Node current = stack.top();
+    stack.pop();
 
     // Found the end
     if (current == end) {
@@ -47,7 +48,7 @@ std::vector<Node> DFS(const Graph& graph, Node start, Node end) {
 
     for (const auto& neighbour : graph.at(current)) {
       if (visited.count(neighbour)) continue;
-      stack.push_back(neighbour);
+      stack.push(neighbour);
       parent[neighbour] = current;
     }
   }
