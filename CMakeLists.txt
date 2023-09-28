@@ -49,7 +49,7 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/
 
 include(CMakePackageConfigHelpers)
 configure_package_config_file(
-	"TransformsGraphConfig.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/TransformsGraphConfig.cmake"
+	"cmake/TransformsGraphConfig.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/TransformsGraphConfig.cmake"
 	INSTALL_DESTINATION "lib/cmake/TransformsGraph"
 )
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/TransformsGraphConfig.cmake" DESTINATION "lib/cmake/TransformsGraph")
