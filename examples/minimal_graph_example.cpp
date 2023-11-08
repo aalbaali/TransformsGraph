@@ -44,12 +44,12 @@ int main(int argc, char* argv[]) {
 
   // Construct a graph that consists of two unconnected subgraphs
   tg::TransformsGraph<Transform, Frame> transforms;
-  transforms.AddTransform('a', 'b', 1);
-  transforms.AddTransform('a', 'c', 2);
-  transforms.AddTransform('b', 'd', 3);
+  transforms.InsertTransform('a', 'b', 1);
+  transforms.InsertTransform('a', 'c', 2);
+  transforms.InsertTransform('b', 'd', 3);
 
   // Add 'e' and 'f' such that they are in a subgraph that is not connected to the rest of the graph
-  transforms.AddTransform('e', 'f', 4);
+  transforms.InsertTransform('e', 'f', 4);
 
   // Visualize the graph using mermaid graph. Copy the output and run on
   // https://mermaid-js.github.io/mermaid-live-editor
@@ -62,7 +62,7 @@ int main(int argc, char* argv[]) {
   std::cout << "Does a->f exist? " << transforms.HasTransform('a', 'f') << std::endl;
 
   // Now let's connect the two subgraphs
-  transforms.AddTransform('c', 'f', 5);
+  transforms.InsertTransform('c', 'f', 5);
 
   // Visualize the graph with edges
   std::cout << transforms.GetMermaidGraph(true) << std::endl;
@@ -80,7 +80,7 @@ int main(int argc, char* argv[]) {
   // This is because the graph is acyclic and adding a transform to an existing path would
   // create a cycle
   try {
-    transforms.AddTransform('a', 'f', 7);
+    transforms.InsertTransform('a', 'f', 7);
   } catch (const std::runtime_error& e) {
     std::cout << "Caught exception: " << e.what() << std::endl;
   }

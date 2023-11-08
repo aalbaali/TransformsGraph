@@ -278,7 +278,7 @@ class TransformsGraph {
    * @param[in] pose Transform from parent to child. That is, for a displacement `r_child` resolved
    * in the `child` frame, it can be resolved in the parent frame using `r_parent = pose * r_child`
    */
-  void AddTransform(Frame parent, Frame child, Transform&& pose, bool should_override = false) {
+  void InsertTransform(Frame parent, Frame child, Transform&& pose, bool should_override = false) {
     // Handle the case where the transform exists. The only situation in which the transform is
     // overridden is if the override flag is set tot true AND the transform to be updated is a raw
     // transform
@@ -442,7 +442,7 @@ class TransformsGraph {
    * in the graph.
    *
    * @details This function is used internally and is not expected to be exposed to the user. The
-   * user should instead use the `AddTransform` function.
+   * user should instead use the `InsertTransform` function.
    *
    * @param[in] parent Parent frame
    * @param[in] child Child frame
