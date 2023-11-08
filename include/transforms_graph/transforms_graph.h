@@ -22,8 +22,11 @@ namespace tg {
  * @brief Transform graph class
  * @tparam Transform Transform/pose type. Should have `*`, `<<`, and `inverse()` defined
  * @tparam Frame Frame type (e.g. char, int, etc.). Should have `<<` defined.
+ * @tparam Inv Function object, where the instance takes an argument of type Transform and returns
+ * an inverse Transform.
  */
-template <typename Transform, typename Frame = char>
+template <typename Transform, typename Frame = char,
+          typename Inv = std::function<Transform(Transform)>>
 class TransformsGraph {
  public:
   /** Id/key used to store transforms in the Transforms map */
@@ -31,6 +34,9 @@ class TransformsGraph {
 
   /** Raw transforms */
   using Transforms = std::unordered_map<TransformId, Transform>;
+
+  /** Inverse function object */
+  using TransformInverse = Inv;
 
   /** Adjacency matrix of adjacent frames */
   using AdjacentFrames = std::unordered_map<Frame, std::unordered_set<Frame>>;
@@ -45,8 +51,13 @@ class TransformsGraph {
    * @details The maximum number of frames cannot be changed after construction
    *
    * @param[in] max_frames Maximum number of frames allowed in the graph
+   * @param[in] transform_inverse Function object to invert a transform. Should take a
+   *            transform as an argument and return its inverse.
    */
-  TransformsGraph(int max_frames = 100) : max_frames_(max_frames) {}
+  TransformsGraph(int max_frames = 100,
+                  TransformInverse transform_inverse = std::bind(&Transform::inverse,
+                                                                 std::placeholders::_1))
+      : max_frames_(max_frames), transform_inverse_(transform_inverse) {}
 
   /**
    * @brief Get maximum number allowed in the transform graph
@@ -130,7 +141,7 @@ class TransformsGraph {
     const auto transform_id = ComputeTransformId(parent, child);
     auto transform = raw_transforms_.at(transform_id);
 
-    return ShouldInvertFrames(parent, child) ? transform.inverse() : transform;
+    return ShouldInvertFrames(parent, child) ? transform_inverse_(transform) : transform;
   }
 
   /**
@@ -160,7 +171,7 @@ class TransformsGraph {
       const auto transform_id = ComputeTransformId(prev, frame);
       auto T_prev_curr = raw_transforms_.at(transform_id);
       if (ShouldInvertFrames(prev, frame)) {
-        T_prev_curr = T_prev_curr.inverse();
+        T_prev_curr = transform_inverse_(T_prev_curr);
       }
 
       T_parent_child = T_parent_child * T_prev_curr;
@@ -354,7 +365,8 @@ class TransformsGraph {
       throw std::runtime_error("Transform does not exist in the graph");
     }
     const auto transform_id = ComputeTransformId(parent, child);
-    raw_transforms_[transform_id] = ShouldInvertFrames(parent, child) ? pose.inverse() : pose;
+    raw_transforms_[transform_id] =
+        ShouldInvertFrames(parent, child) ? transform_inverse_(pose) : pose;
   }
 
   /**
@@ -457,7 +469,8 @@ class TransformsGraph {
     if (!HasFrame(child)) AddFrame(child);
 
     const auto transform_id = ComputeTransformId(parent, child);
-    raw_transforms_[transform_id] = ShouldInvertFrames(parent, child) ? pose.inverse() : pose;
+    raw_transforms_[transform_id] =
+        ShouldInvertFrames(parent, child) ? transform_inverse_(pose) : pose;
   }
 
   /**
@@ -507,6 +520,9 @@ class TransformsGraph {
 
   /** Maximum number of frames expected to be in the graph */
   int max_frames_ = 100;
+
+  /** Function object to invert transform */
+  TransformInverse transform_inverse_;
 
   /** Acyclic graph where the vertices are the frames and the edges are transforms between the two
    * frames */

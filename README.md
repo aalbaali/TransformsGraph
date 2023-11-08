@@ -34,13 +34,14 @@ Refer to [`transforms_graph.h`](include/transforms_graph/transforms_graph.h) for
 ## Required types
 The `TransformsGraph` requires two template parameters:
 1. `Transform` type. This is the type that stores the transforms themselves (i.e., poses). This type should have the following defined:
-    - A default constructor that sets the transform to the identity transform
-    - A valid Multiplication operator `*` operator (i.e., `T1 = T2 * T2`)
-    - A valid `Transform inverse() const` method (i.e., `T1.inverse() * T1` should return an identity transform)
-    - An output stream operator `<<` (i.e., `std::cout << T`)
+    - A default constructor that sets the transform to the identity transform.
+    - A valid Multiplication operator `*` operator (i.e., `T1 = T2 * T2`).
+    - A valid `Transform inverse() const` method (i.e., `T1.inverse() * T1` should return an identity transform). Alternatively, a function `Transform inverse(Transform)` can be injected/passed to the `TransformsGraph` upon construction.
+    - An output stream operator `<<` (i.e., `std::cout << T`).
 2. `Frame` type (default set to `char`). This is the type that keeps track of the frames. The type should have the following defined:
-    - Greater-than comparison operator `>` (i.e., `frame_i > frame_j`)
-    - An output stream operator `<<` (i.e., `std::cout << T`)
+    - Greater-than comparison operator `>` (i.e., `frame_i > frame_j`).
+    - An output stream operator `<<` (i.e., `std::cout << T`).
+3. `Inv` function object (defaults to `Transform::inverse`). The function object is passed in the constructor.
 
 The classes from [Sophus](https://github.com/strasdat/Sophus) (e.g., `Sophus::SE2d`) and [Eigen](https://eigen.tuxfamily.org/dox/group__TutorialGeometry.html) (e.g., `Eigen::Affine2d`) already satisfy the `Transform` requirements, except for the output stream operator `<<` requirement.
 
