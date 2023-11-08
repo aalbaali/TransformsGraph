@@ -20,7 +20,6 @@ class Displacement {
   Displacement() { d_ = 0; }
   Displacement(double d) : d_(d) {}
   double x() const { return d_; }
-  Displacement inverse() const { return Displacement(-d_); }
 
  private:
   double d_;
@@ -43,7 +42,8 @@ int main(int argc, char* argv[]) {
   using Transform = Displacement;
 
   // Construct a graph that consists of two unconnected subgraphs
-  tg::TransformsGraph<Transform, Frame> transforms;
+  auto displacement_inverse = [](const Transform& t) -> Transform { return -t.x(); };
+  tg::TransformsGraph<Transform, Frame> transforms(100, displacement_inverse);
   transforms.AddTransform('a', 'b', 1);
   transforms.AddTransform('a', 'c', 2);
   transforms.AddTransform('b', 'd', 3);
