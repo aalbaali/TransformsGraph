@@ -29,7 +29,7 @@ class Pose {
 
   Pose inverse() const {
     Pose p;
-    p.pose_ = std::move(pose_.inverse());
+    p.pose_ = pose_.inverse();
     return p;
   }
   Eigen::Affine2d Affine() const { return pose_; }

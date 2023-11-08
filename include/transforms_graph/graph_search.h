@@ -27,7 +27,6 @@ namespace tg {
  */
 template <typename Node, typename Graph = std::unordered_map<Node, std::unordered_set<Node>>>
 std::vector<Node> DFS(const Graph& graph, Node start, Node end) {
-  std::vector<Node> path;
   std::unordered_set<Node> visited;
   std::unordered_map<Node, Node> parent;
   std::stack<Node> stack;
@@ -43,6 +42,8 @@ std::vector<Node> DFS(const Graph& graph, Node start, Node end) {
       found_solution = true;
       break;
     }
+
+    // Mark as visited
     if (visited.count(current)) continue;
     visited.insert(current);
 
@@ -55,7 +56,8 @@ std::vector<Node> DFS(const Graph& graph, Node start, Node end) {
 
   if (!found_solution) return {};
 
-  // Found the end
+  // Get path from start -> end
+  std::vector<Node> path;
   Node node = end;
   while (node != start) {
     path.push_back(node);
