@@ -31,13 +31,13 @@ std::ostream& operator<<(std::ostream& os, const Frame& frame) {
 int main(int argc, char* argv[]) {
   // Construct a graph that consists of two unconnected subgraphs
   tg::TransformsGraph<Transform, Frame> transforms;
-  transforms.AddTransform(Frame::A, Frame::B, Transform(M_PI_4, {0, 0}));
-  transforms.AddTransform(Frame::A, Frame::C, Transform(M_PI_2, {0, 0}));
-  transforms.AddTransform(Frame::B, Frame::D, Transform(0, {1, 2}));
+  transforms.InsertTransform(Frame::A, Frame::B, Transform(M_PI_4, {0, 0}));
+  transforms.InsertTransform(Frame::A, Frame::C, Transform(M_PI_2, {0, 0}));
+  transforms.InsertTransform(Frame::B, Frame::D, Transform(0, {1, 2}));
 
   // Add Frame::E and Frame::F such that they are in a subgraph that is not connected to the rest of
   // the graph
-  transforms.AddTransform(Frame::E, Frame::F, Transform(-M_PI_4, {3, 4}));
+  transforms.InsertTransform(Frame::E, Frame::F, Transform(-M_PI_4, {3, 4}));
 
   // Resolve a vector in a different frame
   const auto T_a_b = transforms.GetTransform(Frame::A, Frame::B);
@@ -63,7 +63,7 @@ int main(int argc, char* argv[]) {
   std::cout << "Does a->f exist? " << transforms.HasTransform(Frame::A, Frame::F) << std::endl;
 
   // Now let's connect the two subgraphs
-  transforms.AddTransform(Frame::C, Frame::F, Transform(0, {1, 0}));
+  transforms.InsertTransform(Frame::C, Frame::F, Transform(0, {1, 0}));
 
   // Visualize the graph with edges
   std::cout << transforms.GetMermaidGraph(true) << std::endl;
@@ -81,7 +81,7 @@ int main(int argc, char* argv[]) {
   // This is because the graph is acyclic and adding a transform to an existing path would
   // create a cycle
   try {
-    transforms.AddTransform(Frame::A, Frame::F, Transform(0, {0, 1}));
+    transforms.InsertTransform(Frame::A, Frame::F, Transform(0, {0, 1}));
   } catch (const std::runtime_error& e) {
     std::cout << "Caught exception: " << e.what() << std::endl;
   }

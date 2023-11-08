@@ -54,12 +54,12 @@ TransformsGraph ConstructTwoSubgraphs() {
   ///   e -> f
   TransformsGraph transforms;
   // First connected subgraph
-  transforms.AddTransform('a', 'b', 1);
-  transforms.AddTransform('a', 'c', 2);
-  transforms.AddTransform('b', 'd', 3);
+  transforms.InsertTransform('a', 'b', 1);
+  transforms.InsertTransform('a', 'c', 2);
+  transforms.InsertTransform('b', 'd', 3);
 
   // Second connected subgraph
-  transforms.AddTransform('e', 'f', 4);
+  transforms.InsertTransform('e', 'f', 4);
   return transforms;
 }
 
@@ -75,12 +75,12 @@ enum EnumFrame { A, B, C, D, E, F };
 tg::TransformsGraph<Displacement, EnumClassFrame> ConstructTwoSubgraphsEnumFrame() {
   tg::TransformsGraph<Displacement, EnumClassFrame> transforms;
   // First connected subgraph
-  transforms.AddTransform(EnumClassFrame::a, EnumClassFrame::b, 1);
-  transforms.AddTransform(EnumClassFrame::a, EnumClassFrame::c, 2);
-  transforms.AddTransform(EnumClassFrame::b, EnumClassFrame::d, 3);
+  transforms.InsertTransform(EnumClassFrame::a, EnumClassFrame::b, 1);
+  transforms.InsertTransform(EnumClassFrame::a, EnumClassFrame::c, 2);
+  transforms.InsertTransform(EnumClassFrame::b, EnumClassFrame::d, 3);
 
   // Second connected subgraph
-  transforms.AddTransform(EnumClassFrame::e, EnumClassFrame::f, 4);
+  transforms.InsertTransform(EnumClassFrame::e, EnumClassFrame::f, 4);
   return transforms;
 }
 
@@ -92,12 +92,12 @@ tg::TransformsGraph<Displacement, EnumClassFrame> ConstructTwoSubgraphsEnumFrame
 tg::TransformsGraph<Displacement, EnumFrame> ConstructTwoSubgraphsFrame() {
   tg::TransformsGraph<Displacement, EnumFrame> transforms;
   // First connected subgraph
-  transforms.AddTransform(A, B, 1);
-  transforms.AddTransform(A, C, 2);
-  transforms.AddTransform(B, D, 3);
+  transforms.InsertTransform(A, B, 1);
+  transforms.InsertTransform(A, C, 2);
+  transforms.InsertTransform(B, D, 3);
 
   // Second connected subgraph
-  transforms.AddTransform(E, F, 4);
+  transforms.InsertTransform(E, F, 4);
   return transforms;
 }
 
@@ -109,12 +109,12 @@ tg::TransformsGraph<Displacement, EnumFrame> ConstructTwoSubgraphsFrame() {
 tg::TransformsGraph<Displacement, int> ConstructTwoSubgraphsIntFrame() {
   tg::TransformsGraph<Displacement, int> transforms;
   // First connected subgraph
-  transforms.AddTransform(1, 2, 1);
-  transforms.AddTransform(1, 3, 2);
-  transforms.AddTransform(2, 4, 3);
+  transforms.InsertTransform(1, 2, 1);
+  transforms.InsertTransform(1, 3, 2);
+  transforms.InsertTransform(2, 4, 3);
 
   // Second connected subgraph
-  transforms.AddTransform(5, 6, 4);
+  transforms.InsertTransform(5, 6, 4);
   return transforms;
 }
 
@@ -126,12 +126,12 @@ tg::TransformsGraph<Displacement, int> ConstructTwoSubgraphsIntFrame() {
 tg::TransformsGraph<Displacement, size_t> ConstructTwoSubgraphsSizetFrame() {
   tg::TransformsGraph<Displacement, size_t> transforms;
   // First connected subgraph
-  transforms.AddTransform(1, 2, 1);
-  transforms.AddTransform(1, 3, 2);
-  transforms.AddTransform(2, 4, 3);
+  transforms.InsertTransform(1, 2, 1);
+  transforms.InsertTransform(1, 3, 2);
+  transforms.InsertTransform(2, 4, 3);
 
   // Second connected subgraph
-  transforms.AddTransform(5, 6, 4);
+  transforms.InsertTransform(5, 6, 4);
   return transforms;
 }
 
@@ -218,7 +218,7 @@ TEST(TransformsGraph, ChainedTransforms) {
 TEST(TransformsGraph, AddingTransform) {
   // Add a transform that connects the two subgraphs
   auto transforms = ConstructTwoSubgraphs();
-  transforms.AddTransform('d', 'e', 4);
+  transforms.InsertTransform('d', 'e', 4);
 
   // a<->e chained transform should exist
   EXPECT_TRUE(transforms.HasTransform('a', 'e'));
@@ -236,10 +236,10 @@ TEST(TransformsGraph, ExceedingMaxFrames) {
 
   EXPECT_EQ(transforms.GetAllFrames().size(), 3);
   EXPECT_ANY_THROW(transforms.AddFrame('d'));
-  EXPECT_ANY_THROW(transforms.AddTransform('a', 'd', 5));
+  EXPECT_ANY_THROW(transforms.InsertTransform('a', 'd', 5));
 
   // Adding a transform to an already-existing transforms shouldn't throw an exception
-  EXPECT_NO_THROW(transforms.AddTransform('a', 'b', 1));
+  EXPECT_NO_THROW(transforms.InsertTransform('a', 'b', 1));
   EXPECT_EQ(transforms.GetAllRawTransforms().size(), 1);
 }
 

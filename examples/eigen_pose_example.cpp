@@ -55,9 +55,9 @@ std::ostream& operator<<(std::ostream& os, const Frame& frame) {
 int main(int argc, char* argv[]) {
 
   tg::TransformsGraph<Pose, Frame> transforms;
-  transforms.AddTransform(Frame::MAP, Frame::ODOM, Pose({1, 2}, 0.0));
-  transforms.AddTransform(Frame::BASE_LINK, Frame::CAMERA, Pose({0.5, 0.0}, 0.0));
-  transforms.AddTransform(Frame::BASE_LINK, Frame::FRONT_LIDAR, Pose({2, 1}, M_PI_4));
+  transforms.InsertTransform(Frame::MAP, Frame::ODOM, Pose({1, 2}, 0.0));
+  transforms.InsertTransform(Frame::BASE_LINK, Frame::CAMERA, Pose({0.5, 0.0}, 0.0));
+  transforms.InsertTransform(Frame::BASE_LINK, Frame::FRONT_LIDAR, Pose({2, 1}, M_PI_4));
 
   std::unordered_map<Frame, std::string> frame_names = {{Frame::MAP, "Map"},
                                                         {Frame::ODOM, "Odom"},
@@ -71,7 +71,7 @@ int main(int argc, char* argv[]) {
             << std::endl;
 
   // Add transform between already-existing frames
-  transforms.AddTransform(Frame::ODOM, Frame::BASE_LINK, Pose({-1, 3}, M_PI_2));
+  transforms.InsertTransform(Frame::ODOM, Frame::BASE_LINK, Pose({-1, 3}, M_PI_2));
 
   // Set BFS as the graph search algorithm
   // transforms.SetGraphSearchCallback(tg::BFS<char>);

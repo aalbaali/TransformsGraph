@@ -64,9 +64,9 @@ std::ostream& operator<<(std::ostream& os, const Frame& frame) {
 
 int main() {
   tg::TransformsGraph<Pose, Frame> transforms;
-  transforms.AddTransform(Frame::MAP, Frame::ODOM, Pose({1, 2}, 0.0));
-  transforms.AddTransform(Frame::BASE_LINK, Frame::CAMERA, Pose({0.5, 0.0}, 0.0));
-  transforms.AddTransform(Frame::BASE_LINK, Frame::FRONT_LIDAR, Pose({2, 1}, M_PI_4));
+  transforms.InsertTransform(Frame::MAP, Frame::ODOM, Pose({1, 2}, 0.0));
+  transforms.InsertTransform(Frame::BASE_LINK, Frame::CAMERA, Pose({0.5, 0.0}, 0.0));
+  transforms.InsertTransform(Frame::BASE_LINK, Frame::FRONT_LIDAR, Pose({2, 1}, M_PI_4));
 }
 ```
 
@@ -78,7 +78,7 @@ This has a minor side effect that the transform could be stored in a way that's 
 For example, if the user does
 ```c++
 tg::TransformsGraph<Transform> transforms;
-transforms.AddTransform('b', 'a', Transform(M_PI_4, {0, 0}));
+transforms.InsertTransform('b', 'a', Transform(M_PI_4, {0, 0}));
 ```
 Then, since `'b' > 'a'`, then the transform is inverted and is stored as `T_a_b = Transform(M_PI_4, {0, 0}).inverse()`.
 When the user asks for the transform `T_b_a`, then the transform is computed using `T_b_a = T_a_b.inverse()` and is returned to the user.
@@ -95,10 +95,10 @@ Check the [Transforms storage](#transforms-storage) for additional details on th
 
 Taking the output from the [Sophus example](examples/sophus_pose_example.cpp) example
 ```c++
-transforms.AddTransform(Frame::A, Frame::B, Transform(M_PI_4, {0, 0}));
-transforms.AddTransform(Frame::A, Frame::C, Transform(M_PI_2, {0, 0}));
-transforms.AddTransform(Frame::B, Frame::D, Transform(0, {1, 2}));
-transforms.AddTransform(Frame::E, Frame::F, Transform(-M_PI_4, {3, 4}));
+transforms.InsertTransform(Frame::A, Frame::B, Transform(M_PI_4, {0, 0}));
+transforms.InsertTransform(Frame::A, Frame::C, Transform(M_PI_2, {0, 0}));
+transforms.InsertTransform(Frame::B, Frame::D, Transform(0, {1, 2}));
+transforms.InsertTransform(Frame::E, Frame::F, Transform(-M_PI_4, {3, 4}));
 std::cout << transforms.GetMermaidGraph() << std::endl;
 ```
 and wrapping it in a Markdown code block with `mermaid` language identifier, results in the following flowchart.
