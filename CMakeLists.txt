@@ -52,9 +52,9 @@ install(
 include(CMakePackageConfigHelpers)
 configure_package_config_file(
 	"TransformsGraphConfig.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/TransformsGraphConfig.cmake"
-	INSTALL_DESTINATION "lib/cmake/TransformsGraph"
+  INSTALL_DESTINATION "${TRANSFORMS_GRAPH_CMAKE_EXPORT_DIR}"
 )
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/TransformsGraphConfig.cmake" DESTINATION "lib/cmake/TransformsGraph")
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/TransformsGraphConfig.cmake" DESTINATION "${TRANSFORMS_GRAPH_CMAKE_EXPORT_DIR}")
 
 # Export without installing
 export(
