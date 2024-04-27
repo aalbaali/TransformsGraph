@@ -61,7 +61,7 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${TARGETS_NAME}Config.cmake" DESTINAT
 
 # Export without installing
 export(
-  EXPORT TransformsGraphTargets
+  EXPORT "${TARGETS_NAME}Targets"
   FILE "${CMAKE_CURRENT_BINARY_DIR}/${TARGETS_NAME}Targets.cmake"
   NAMESPACE "${TARGETS_NAMESPACE}::"
 )
