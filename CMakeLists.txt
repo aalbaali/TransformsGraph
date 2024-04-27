@@ -31,26 +31,37 @@ endif()
 # Installation
 ################################################
 # Export package for use from the build tree
-set(TRANSFORMS_GRAPH_CMAKE_EXPORT_DIR lib/cmake/TransformsGraph)
+set(CMAKE_EXPORT_DIR lib/cmake/TransformsGraph)
+set(TARGETS_NAME "TransformsGraph")
+set(TARGETS_NAMESPACE "TransformsGraph")
+set(TARGETS_CONFIG_FILENAME "${TARGETS_NAME}Config.cmake.in")
 
-install(TARGETS TransformsGraph
-        EXPORT  TransformsGraphTargets
-        ARCHIVE DESTINATION lib
-        LIBRARY DESTINATION lib
+install(
+  TARGETS "${TARGETS_NAME}"
+  EXPORT  "${TARGETS_NAME}Targets"
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib 
 )
-install(EXPORT TransformsGraphTargets 
-  NAMESPACE TransformsGraph::
-  DESTINATION ${TRANSFORMS_GRAPH_CMAKE_EXPORT_DIR}
+install(EXPORT "${TARGETS_NAME}Targets" 
+  NAMESPACE "${TARGETS_NAMESPACE}::"
+  DESTINATION ${CMAKE_EXPORT_DIR}
 )
 
 # Install the include directory
-install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/
-      DESTINATION include)
-
+install(
+  DIRECTORY ${PROJECT_SOURCE_DIR}/include/
+  DESTINATION include
+)
 include(CMakePackageConfigHelpers)
 configure_package_config_file(
-	"TransformsGraphConfig.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/TransformsGraphConfig.cmake"
-	INSTALL_DESTINATION "lib/cmake/TransformsGraph"
+  "${TARGETS_CONFIG_FILENAME}" "${CMAKE_CURRENT_BINARY_DIR}/${TARGETS_NAME}Config.cmake"
+  INSTALL_DESTINATION "${CMAKE_EXPORT_DIR}"
 )
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/TransformsGraphConfig.cmake" DESTINATION "lib/cmake/TransformsGraph")
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${TARGETS_NAME}Config.cmake" DESTINATION "${CMAKE_EXPORT_DIR}")
 
+# Export without installing
+export(
+  EXPORT "${TARGETS_NAME}Targets"
+  FILE "${CMAKE_CURRENT_BINARY_DIR}/${TARGETS_NAME}Targets.cmake"
+  NAMESPACE "${TARGETS_NAMESPACE}::"
+)
