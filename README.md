@@ -16,7 +16,10 @@ This is similar to the [tf2 ROS package](http://wiki.ros.org/tf2), but this pack
     * [Using `enum` for `Frame`](#using-enum-for-frame)
 * [Transforms storage](#transforms-storage)
     * [Mermaid graphs](#mermaid-graphs)
-* [Installation](#installation)
+Building and installing](#building-and-installing)
+    * [Copy include files locally](#copy-include-files-locally)
+    * [Link package to the downstream project](#link-package-to-the-downstream-project)
+    * [Install the package globally](#install-the-package-globally)
 * [FAQ](#faq)
 
 <!-- vim-markdown-toc -->
@@ -163,14 +166,38 @@ graph TD
 
 The transforms can be visualized for this option as well by passing `true` as the second argument to `GetMermaidGraph`.
 
-# Installation
-This is a header-only library.
-It can be used by directly including the `include/transforms_graph/transforms_graph.h` into your folder, or it can be installed on your system by running the following from the root of this repo.
+# Building and installing
+This is a header-only library, so it doesn't need to be built. However, the examples and tests need to be built:
 ```bash
-cmake -S . --build build
+cmake -S . --build build -DBUILD_EXAMPLES=ON
 cmake --build build
-sudo cmake --install build
 ```
+There are various ways to use the package downstream, which are listed below:
+## Copy include files locally
+Since the library is header-only, the header files can be included in the downstream project by copying `include/transforms_graph/transforms_graph.h` into the downstream project and including it into the CMake targets.
+
+## Link package to the downstream project
+The TransformsGraph exports the `TransformsGraph::TransformsGraph` library.
+The library can be imported downstream by adding the following to the `CMakeLists.txt`
+```bash
+# In the downstream CMakeLists.txt
+find_package(TransformsGraph REQUIRED)
+...
+target_link_libraries(main TransformsGraph::TransformsGraph)
+```
+The TransformsGraph *build* directory `<transforms-graph-build-directory>` then needs to be passed as an argument when building the CMake project:
+Then, the downstream 
+```bash
+# In the downstream project
+cmake -S . -B build -DTransformsGraph_DIR=<path-to-transforms-graph-build-directory>
+```
+
+## Install the package globally
+The TransformsGraph package can be installed globally by running
+```bash
+cmake --install build  # May require `sudo` privileges
+```
+The `CMakeLists.txt` downstream can then be used as shown in the [previous section](#link-package-to-the-downstream-project)
 
 # FAQ
 - Why use a graph instead of a tree or a forest?
