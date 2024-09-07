@@ -53,4 +53,5 @@ configure_package_config_file(
 	INSTALL_DESTINATION "lib/cmake/TransformsGraph"
 )
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/TransformsGraphConfig.cmake" DESTINATION "lib/cmake/TransformsGraph")
+export(TARGETS TransformsGraph NAMESPACE TransformsGraph:: FILE TransformsGraphTargets.cmake)
 
